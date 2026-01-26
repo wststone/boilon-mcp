@@ -15,6 +15,13 @@
       "when": 1769405072040,
       "tag": "0001_tough_fantastic_four",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769408270003,
+      "tag": "0002_slim_prism",
+      "breakpoints": true
     }
   ]
 }

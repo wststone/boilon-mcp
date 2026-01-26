@@ -10,6 +10,7 @@ import {
 	LogOut,
 	Menu,
 	Music,
+	Newspaper,
 	Settings,
 	Users,
 	X,
@@ -25,16 +26,16 @@ interface DashboardLayoutProps {
 
 const navigation = [
 	{ name: "概览", href: "/dashboard", icon: LayoutDashboard },
-	{ name: "知识库", href: "/dashboard/knowledge-base", icon: BookOpen },
 	{ name: "服务管理", href: "/dashboard/services", icon: Settings },
 	{ name: "API 密钥", href: "/dashboard/api-keys", icon: Key },
 	{ name: "团队管理", href: "/dashboard/team", icon: Users },
 ];
 
 const services = [
-	{ name: "RAG 知识库", href: "/dashboard/knowledge-base", icon: Database },
-	{ name: "天气服务", href: "/dashboard/services", icon: Cloud },
-	{ name: "音乐服务", href: "/dashboard/services", icon: Music },
+	{ name: "知识库", href: "/dashboard/knowledge-base", icon: Database },
+	{ name: "天气服务", href: "/dashboard/weather", icon: Cloud },
+	{ name: "音乐服务", href: "/dashboard/music", icon: Music },
+	{ name: "新闻服务", href: "/dashboard/news", icon: Newspaper },
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -77,7 +78,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 							<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
 								<Zap className="w-4 h-4 text-white" />
 							</div>
-							<span className="text-lg font-bold text-foreground">Boilon MCP</span>
+							<span className="text-lg font-bold text-foreground">
+								Boilon MCP
+							</span>
 						</Link>
 						<button
 							className="lg:hidden p-2 text-muted-foreground hover:text-foreground"

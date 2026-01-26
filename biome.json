@@ -24,7 +24,20 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"recommended": true,
+			"a11y": {
+				"noRedundantAlt": "warn",
+				"useSemanticElements": "off",
+				"noStaticElementInteractions": "warn",
+				"useKeyWithClickEvents": "off",
+				"useMediaCaption": "off",
+				"useAriaPropsForRole": "warn",
+				"useFocusableInteractive": "warn",
+				"noSvgWithoutTitle": "off",
+				"noAriaHiddenOnFocusable": "off",
+				"useAriaPropsSupportedByRole": "off",
+				"noRedundantRoles": "off"
+			}
 		}
 	},
 	"javascript": {

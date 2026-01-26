@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Copy, FileText, Loader2, Search } from "lucide-react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -7,6 +8,8 @@ export interface SearchResult {
 	chunkId: string;
 	content: string;
 	similarity: number;
+	vectorSimilarity: number;
+	keywordSimilarity: number;
 	documentTitle: string | null;
 	fileName: string;
 	fileId: string;
@@ -18,41 +21,60 @@ interface SearchInterfaceProps {
 	disabled?: boolean;
 }
 
+function SimilarityBadge({
+	label,
+	value,
+	variant,
+}: {
+	label: string;
+	value: number;
+	variant: "vector" | "keyword";
+}) {
+	if (value <= 0) return null;
+
+	const percent = `${Math.round(value * 100)}%`;
+	const colorClass =
+		value >= 0.8
+			? "bg-emerald-500/10 text-emerald-400"
+			: value >= 0.6
+				? variant === "vector"
+					? "bg-cyan-500/10 text-cyan-400"
+					: "bg-violet-500/10 text-violet-400"
+				: "bg-amber-500/10 text-amber-400";
+
+	return (
+		<span className={`px-2.5 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+			{label} {percent}
+		</span>
+	);
+}
+
 export function SearchInterface({
 	onSearch,
 	disabled = false,
 }: SearchInterfaceProps) {
 	const [query, setQuery] = useState("");
-	const [results, setResults] = useState<SearchResult[]>([]);
-	const [isSearching, setIsSearching] = useState(false);
-	const [error, setError] = useState("");
-	const [hasSearched, setHasSearched] = useState(false);
+	const searchMutation = useMutation({
+		mutationKey: ["knowledge-base-search"],
+		mutationFn: (q: string) => onSearch(q),
+	});
 
-	const handleSearch = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!query.trim()) return;
+	const isSearching = searchMutation.isPending;
+	const error = searchMutation.error;
+	const results = searchMutation.data ?? [];
+	const hasSearched = !searchMutation.isIdle;
 
-		setIsSearching(true);
-		setError("");
-		setHasSearched(true);
-
-		try {
-			const searchResults = await onSearch(query.trim());
-			setResults(searchResults);
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "搜索失败");
-			setResults([]);
-		} finally {
-			setIsSearching(false);
-		}
-	};
+	const handleSearch = useCallback(
+		(e: React.FormEvent) => {
+			e.preventDefault();
+			if (!query.trim()) return;
+			searchMutation.mutate(query.trim());
+		},
+		[query, searchMutation],
+	);
 
 	const handleCopy = async (content: string) => {
 		await navigator.clipboard.writeText(content);
-	};
-
-	const formatSimilarity = (similarity: number) => {
-		return `${Math.round(similarity * 100)}%`;
 	};
 
 	return (
@@ -85,7 +107,7 @@ export function SearchInterface({
 			{/* Error Message */}
 			{error && (
 				<div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-					{error}
+					{error.message || "搜索失败"}
 				</div>
 			)}
 
@@ -108,7 +130,7 @@ export function SearchInterface({
 						</div>
 					) : (
 						<div className="space-y-4">
-							{results.map((result, index) => (
+							{results.map((result) => (
 								<div
 									key={result.chunkId}
 									className="bg-card border border-border rounded-xl overflow-hidden"
@@ -128,18 +150,17 @@ export function SearchInterface({
 												</p>
 											</div>
 										</div>
-										<div className="flex items-center gap-3">
-											<span
-												className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-													result.similarity >= 0.8
-														? "bg-emerald-500/10 text-emerald-400"
-														: result.similarity >= 0.6
-															? "bg-cyan-500/10 text-cyan-400"
-															: "bg-amber-500/10 text-amber-400"
-												}`}
-											>
-												相似度 {formatSimilarity(result.similarity)}
-											</span>
+										<div className="flex items-center gap-2">
+											<SimilarityBadge
+												label="语义"
+												value={result.vectorSimilarity}
+												variant="vector"
+											/>
+											<SimilarityBadge
+												label="关键词"
+												value={result.keywordSimilarity}
+												variant="keyword"
+											/>
 											<Button
 												variant="ghost"
 												size="sm"

@@ -4,7 +4,11 @@ import { z } from "zod";
 import { db } from "@/db";
 import { files, knowledgeBaseFiles, knowledgeBases } from "@/db/file";
 import { sessionAuthMiddleware } from "@/middleware/api-auth";
-import { deleteFile, extractKeyFromUrl } from "@/services/knowledge-base";
+import {
+	deleteFile,
+	extractKeyFromUrl,
+	hybridSearch,
+} from "@/services/knowledge-base";
 import { deleteFileData } from "@/services/knowledge-base/task-processor";
 
 // ============================================
@@ -94,6 +98,13 @@ const deleteKnowledgeBaseSchema = z.object({
 	id: z.string(),
 });
 
+const searchKnowledgeBaseSchema = z.object({
+	knowledgeBaseId: z.string(),
+	query: z.string().min(1, "请提供搜索查询"),
+	limit: z.number().min(1).max(50).optional(),
+	threshold: z.number().min(0).max(1).optional(),
+});
+
 // ============================================
 // Server Functions
 // ============================================
@@ -145,7 +156,7 @@ export const $listKnowledgeBases = createServerFn({
 					updatedAt: kb.updatedAt,
 					fileCount: fileCount?.count || 0,
 				};
-			})
+			}),
 		);
 
 		return result;
@@ -161,7 +172,7 @@ export const $createKnowledgeBase = createServerFn({
 	.handler(async (ctx) => {
 		const { userId } = ctx.context;
 		const input = createKnowledgeBaseSchema.parse(
-			(ctx as unknown as { data: CreateKnowledgeBaseInput }).data
+			(ctx as unknown as { data: CreateKnowledgeBaseInput }).data,
 		);
 		const { name, description, icon, type, isPublic, settings } = input;
 
@@ -194,7 +205,7 @@ export const $getKnowledgeBase = createServerFn({
 	.handler(async (ctx) => {
 		const { userId } = ctx.context;
 		const input = getKnowledgeBaseSchema.parse(
-			(ctx as unknown as { data: GetKnowledgeBaseInput }).data
+			(ctx as unknown as { data: GetKnowledgeBaseInput }).data,
 		);
 		const { id } = input;
 
@@ -224,7 +235,7 @@ export const $updateKnowledgeBase = createServerFn({
 	.handler(async (ctx) => {
 		const { userId } = ctx.context;
 		const input = updateKnowledgeBaseSchema.parse(
-			(ctx as unknown as { data: UpdateKnowledgeBaseInput }).data
+			(ctx as unknown as { data: UpdateKnowledgeBaseInput }).data,
 		);
 		const { id, name, description, icon, type, isPublic, settings } = input;
 
@@ -268,7 +279,7 @@ export const $deleteKnowledgeBase = createServerFn({
 	.handler(async (ctx) => {
 		const { userId } = ctx.context;
 		const input = deleteKnowledgeBaseSchema.parse(
-			(ctx as unknown as { data: DeleteKnowledgeBaseInput }).data
+			(ctx as unknown as { data: DeleteKnowledgeBaseInput }).data,
 		);
 		const { id } = input;
 
@@ -314,4 +325,41 @@ export const $deleteKnowledgeBase = createServerFn({
 		await db.delete(knowledgeBases).where(eq(knowledgeBases.id, id));
 
 		return { success: true };
+	});
+
+/**
+ * 搜索知识库
+ */
+export const $searchKnowledgeBase = createServerFn({
+	method: "POST",
+})
+	.middleware([sessionAuthMiddleware])
+	.inputValidator(searchKnowledgeBaseSchema)
+	.handler(async ({ context, data }) => {
+		const { userId } = context;
+		const { knowledgeBaseId, query, limit = 10, threshold = 0.2 } = data;
+
+		// 验证知识库存在且属于当前用户
+		const [kb] = await db
+			.select()
+			.from(knowledgeBases)
+			.where(
+				and(
+					eq(knowledgeBases.id, knowledgeBaseId),
+					eq(knowledgeBases.userId, userId),
+				),
+			)
+			.limit(1);
+
+		if (!kb) {
+			throw new Error("知识库不存在");
+		}
+
+		const results = await hybridSearch(knowledgeBaseId, query, userId, {
+			limit,
+			threshold,
+			includeContent: true,
+		});
+
+		return results;
 	});

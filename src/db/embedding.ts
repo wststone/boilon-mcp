@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
 	index,
 	integer,
@@ -12,18 +13,24 @@ import {
 import { users } from "./auth";
 import { timestamps } from "./utils";
 
-export const chunks = pgTable("chunks", {
-	id: uuid("id").defaultRandom().primaryKey(),
-	text: text("text"),
-	abstract: text("abstract"),
-	metadata: jsonb("metadata"),
-	index: integer("index"),
-	type: varchar("type"),
-	userId: uuid("user_id").references(() => users.id, {
-		onDelete: "cascade",
-	}),
-	...timestamps,
-});
+export const chunks = pgTable(
+	"chunks",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		text: text("text"),
+		abstract: text("abstract"),
+		metadata: jsonb("metadata"),
+		index: integer("index"),
+		type: varchar("type"),
+		userId: uuid("user_id").references(() => users.id, {
+			onDelete: "cascade",
+		}),
+		...timestamps,
+	},
+	(table) => [
+		index("chunk_text_trgm_idx").using("gin", sql`${table.text} gin_trgm_ops`),
+	],
+);
 
 export const embeddings = pgTable(
 	"embeddings",

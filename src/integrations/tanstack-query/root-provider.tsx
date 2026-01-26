@@ -14,7 +14,3 @@ export function getContext() {
 		queryClient,
 	};
 }
-
-export function RootProvider({ children }: { children: React.ReactNode }) {
-	return children;
-}

@@ -39,6 +39,8 @@ export {
 // 搜索服务
 export {
 	semanticSearch,
+	keywordSearch,
+	hybridSearch,
 	globalSearch,
 	getRelevantContext,
 	type SearchOptions,

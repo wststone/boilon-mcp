@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as DashboardRouteRouteImport } from './routes/dashboard/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as McpWeatherRouteImport } from './routes/mcp/weather'
@@ -17,6 +18,7 @@ import { Route as McpNewsRouteImport } from './routes/mcp/news'
 import { Route as McpMusicRouteImport } from './routes/mcp/music'
 import { Route as DashboardTeamRouteImport } from './routes/dashboard/team'
 import { Route as DashboardServicesRouteImport } from './routes/dashboard/services'
+import { Route as DashboardNewsRouteImport } from './routes/dashboard/news'
 import { Route as DashboardApiKeysRouteImport } from './routes/dashboard/api-keys'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
@@ -30,19 +32,23 @@ import { Route as DashboardKnowledgeBaseIdRouteImport } from './routes/dashboard
 import { Route as ApiTasksTaskIdRouteImport } from './routes/api/tasks/$taskId'
 import { Route as ApiKnowledgeBaseIdRouteImport } from './routes/api/knowledge-base/$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as ApiKnowledgeBaseIdSearchRouteImport } from './routes/api/knowledge-base/$id.search'
 import { Route as ApiKnowledgeBaseIdFilesRouteImport } from './routes/api/knowledge-base/$id.files'
 import { Route as ApiKnowledgeBaseIdFilesFileIdRouteImport } from './routes/api/knowledge-base/$id.files.$fileId'
 
+const DashboardRouteRoute = DashboardRouteRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
-  id: '/dashboard/',
-  path: '/dashboard/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRouteRoute,
 } as any)
 const McpWeatherRoute = McpWeatherRouteImport.update({
   id: '/mcp/weather',
@@ -65,19 +71,24 @@ const McpMusicRoute = McpMusicRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardTeamRoute = DashboardTeamRouteImport.update({
-  id: '/dashboard/team',
-  path: '/dashboard/team',
-  getParentRoute: () => rootRouteImport,
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => DashboardRouteRoute,
 } as any)
 const DashboardServicesRoute = DashboardServicesRouteImport.update({
-  id: '/dashboard/services',
-  path: '/dashboard/services',
-  getParentRoute: () => rootRouteImport,
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardNewsRoute = DashboardNewsRouteImport.update({
+  id: '/news',
+  path: '/news',
+  getParentRoute: () => DashboardRouteRoute,
 } as any)
 const DashboardApiKeysRoute = DashboardApiKeysRouteImport.update({
-  id: '/dashboard/api-keys',
-  path: '/dashboard/api-keys',
-  getParentRoute: () => rootRouteImport,
+  id: '/api-keys',
+  path: '/api-keys',
+  getParentRoute: () => DashboardRouteRoute,
 } as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
   id: '/auth/register',
@@ -91,9 +102,9 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
 } as any)
 const DashboardKnowledgeBaseIndexRoute =
   DashboardKnowledgeBaseIndexRouteImport.update({
-    id: '/dashboard/knowledge-base/',
-    path: '/dashboard/knowledge-base/',
-    getParentRoute: () => rootRouteImport,
+    id: '/knowledge-base/',
+    path: '/knowledge-base/',
+    getParentRoute: () => DashboardRouteRoute,
   } as any)
 const ApiKnowledgeBaseIndexRoute = ApiKnowledgeBaseIndexRouteImport.update({
   id: '/api/knowledge-base/',
@@ -122,9 +133,9 @@ const McpMusicMessageRoute = McpMusicMessageRouteImport.update({
 } as any)
 const DashboardKnowledgeBaseIdRoute =
   DashboardKnowledgeBaseIdRouteImport.update({
-    id: '/dashboard/knowledge-base/$id',
-    path: '/dashboard/knowledge-base/$id',
-    getParentRoute: () => rootRouteImport,
+    id: '/knowledge-base/$id',
+    path: '/knowledge-base/$id',
+    getParentRoute: () => DashboardRouteRoute,
   } as any)
 const ApiTasksTaskIdRoute = ApiTasksTaskIdRouteImport.update({
   id: '/api/tasks/$taskId',
@@ -141,12 +152,6 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiKnowledgeBaseIdSearchRoute =
-  ApiKnowledgeBaseIdSearchRouteImport.update({
-    id: '/search',
-    path: '/search',
-    getParentRoute: () => ApiKnowledgeBaseIdRoute,
-  } as any)
 const ApiKnowledgeBaseIdFilesRoute = ApiKnowledgeBaseIdFilesRouteImport.update({
   id: '/files',
   path: '/files',
@@ -161,9 +166,11 @@ const ApiKnowledgeBaseIdFilesFileIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/dashboard/api-keys': typeof DashboardApiKeysRoute
+  '/dashboard/news': typeof DashboardNewsRoute
   '/dashboard/services': typeof DashboardServicesRoute
   '/dashboard/team': typeof DashboardTeamRoute
   '/mcp/music': typeof McpMusicRouteWithChildren
@@ -182,7 +189,6 @@ export interface FileRoutesByFullPath {
   '/api/knowledge-base/': typeof ApiKnowledgeBaseIndexRoute
   '/dashboard/knowledge-base/': typeof DashboardKnowledgeBaseIndexRoute
   '/api/knowledge-base/$id/files': typeof ApiKnowledgeBaseIdFilesRouteWithChildren
-  '/api/knowledge-base/$id/search': typeof ApiKnowledgeBaseIdSearchRoute
   '/api/knowledge-base/$id/files/$fileId': typeof ApiKnowledgeBaseIdFilesFileIdRoute
 }
 export interface FileRoutesByTo {
@@ -190,6 +196,7 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/dashboard/api-keys': typeof DashboardApiKeysRoute
+  '/dashboard/news': typeof DashboardNewsRoute
   '/dashboard/services': typeof DashboardServicesRoute
   '/dashboard/team': typeof DashboardTeamRoute
   '/mcp/music': typeof McpMusicRouteWithChildren
@@ -208,15 +215,16 @@ export interface FileRoutesByTo {
   '/api/knowledge-base': typeof ApiKnowledgeBaseIndexRoute
   '/dashboard/knowledge-base': typeof DashboardKnowledgeBaseIndexRoute
   '/api/knowledge-base/$id/files': typeof ApiKnowledgeBaseIdFilesRouteWithChildren
-  '/api/knowledge-base/$id/search': typeof ApiKnowledgeBaseIdSearchRoute
   '/api/knowledge-base/$id/files/$fileId': typeof ApiKnowledgeBaseIdFilesFileIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/dashboard/api-keys': typeof DashboardApiKeysRoute
+  '/dashboard/news': typeof DashboardNewsRoute
   '/dashboard/services': typeof DashboardServicesRoute
   '/dashboard/team': typeof DashboardTeamRoute
   '/mcp/music': typeof McpMusicRouteWithChildren
@@ -235,16 +243,17 @@ export interface FileRoutesById {
   '/api/knowledge-base/': typeof ApiKnowledgeBaseIndexRoute
   '/dashboard/knowledge-base/': typeof DashboardKnowledgeBaseIndexRoute
   '/api/knowledge-base/$id/files': typeof ApiKnowledgeBaseIdFilesRouteWithChildren
-  '/api/knowledge-base/$id/search': typeof ApiKnowledgeBaseIdSearchRoute
   '/api/knowledge-base/$id/files/$fileId': typeof ApiKnowledgeBaseIdFilesFileIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/dashboard'
     | '/auth/login'
     | '/auth/register'
     | '/dashboard/api-keys'
+    | '/dashboard/news'
     | '/dashboard/services'
     | '/dashboard/team'
     | '/mcp/music'
@@ -263,7 +272,6 @@ export interface FileRouteTypes {
     | '/api/knowledge-base/'
     | '/dashboard/knowledge-base/'
     | '/api/knowledge-base/$id/files'
-    | '/api/knowledge-base/$id/search'
     | '/api/knowledge-base/$id/files/$fileId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -271,6 +279,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/dashboard/api-keys'
+    | '/dashboard/news'
     | '/dashboard/services'
     | '/dashboard/team'
     | '/mcp/music'
@@ -289,14 +298,15 @@ export interface FileRouteTypes {
     | '/api/knowledge-base'
     | '/dashboard/knowledge-base'
     | '/api/knowledge-base/$id/files'
-    | '/api/knowledge-base/$id/search'
     | '/api/knowledge-base/$id/files/$fileId'
   id:
     | '__root__'
     | '/'
+    | '/dashboard'
     | '/auth/login'
     | '/auth/register'
     | '/dashboard/api-keys'
+    | '/dashboard/news'
     | '/dashboard/services'
     | '/dashboard/team'
     | '/mcp/music'
@@ -315,32 +325,33 @@ export interface FileRouteTypes {
     | '/api/knowledge-base/'
     | '/dashboard/knowledge-base/'
     | '/api/knowledge-base/$id/files'
-    | '/api/knowledge-base/$id/search'
     | '/api/knowledge-base/$id/files/$fileId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRouteRoute: typeof DashboardRouteRouteWithChildren
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
-  DashboardApiKeysRoute: typeof DashboardApiKeysRoute
-  DashboardServicesRoute: typeof DashboardServicesRoute
-  DashboardTeamRoute: typeof DashboardTeamRoute
   McpMusicRoute: typeof McpMusicRouteWithChildren
   McpNewsRoute: typeof McpNewsRouteWithChildren
   McpRagRoute: typeof McpRagRouteWithChildren
   McpWeatherRoute: typeof McpWeatherRouteWithChildren
-  DashboardIndexRoute: typeof DashboardIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiKnowledgeBaseIdRoute: typeof ApiKnowledgeBaseIdRouteWithChildren
   ApiTasksTaskIdRoute: typeof ApiTasksTaskIdRoute
-  DashboardKnowledgeBaseIdRoute: typeof DashboardKnowledgeBaseIdRoute
   ApiKnowledgeBaseIndexRoute: typeof ApiKnowledgeBaseIndexRoute
-  DashboardKnowledgeBaseIndexRoute: typeof DashboardKnowledgeBaseIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -350,10 +361,10 @@ declare module '@tanstack/react-router' {
     }
     '/dashboard/': {
       id: '/dashboard/'
-      path: '/dashboard'
+      path: '/'
       fullPath: '/dashboard/'
       preLoaderRoute: typeof DashboardIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof DashboardRouteRoute
     }
     '/mcp/weather': {
       id: '/mcp/weather'
@@ -385,24 +396,31 @@ declare module '@tanstack/react-router' {
     }
     '/dashboard/team': {
       id: '/dashboard/team'
-      path: '/dashboard/team'
+      path: '/team'
       fullPath: '/dashboard/team'
       preLoaderRoute: typeof DashboardTeamRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof DashboardRouteRoute
     }
     '/dashboard/services': {
       id: '/dashboard/services'
-      path: '/dashboard/services'
+      path: '/services'
       fullPath: '/dashboard/services'
       preLoaderRoute: typeof DashboardServicesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/news': {
+      id: '/dashboard/news'
+      path: '/news'
+      fullPath: '/dashboard/news'
+      preLoaderRoute: typeof DashboardNewsRouteImport
+      parentRoute: typeof DashboardRouteRoute
     }
     '/dashboard/api-keys': {
       id: '/dashboard/api-keys'
-      path: '/dashboard/api-keys'
+      path: '/api-keys'
       fullPath: '/dashboard/api-keys'
       preLoaderRoute: typeof DashboardApiKeysRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof DashboardRouteRoute
     }
     '/auth/register': {
       id: '/auth/register'
@@ -420,10 +438,10 @@ declare module '@tanstack/react-router' {
     }
     '/dashboard/knowledge-base/': {
       id: '/dashboard/knowledge-base/'
-      path: '/dashboard/knowledge-base'
+      path: '/knowledge-base'
       fullPath: '/dashboard/knowledge-base/'
       preLoaderRoute: typeof DashboardKnowledgeBaseIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof DashboardRouteRoute
     }
     '/api/knowledge-base/': {
       id: '/api/knowledge-base/'
@@ -462,10 +480,10 @@ declare module '@tanstack/react-router' {
     }
     '/dashboard/knowledge-base/$id': {
       id: '/dashboard/knowledge-base/$id'
-      path: '/dashboard/knowledge-base/$id'
+      path: '/knowledge-base/$id'
       fullPath: '/dashboard/knowledge-base/$id'
       preLoaderRoute: typeof DashboardKnowledgeBaseIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof DashboardRouteRoute
     }
     '/api/tasks/$taskId': {
       id: '/api/tasks/$taskId'
@@ -488,13 +506,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/knowledge-base/$id/search': {
-      id: '/api/knowledge-base/$id/search'
-      path: '/search'
-      fullPath: '/api/knowledge-base/$id/search'
-      preLoaderRoute: typeof ApiKnowledgeBaseIdSearchRouteImport
-      parentRoute: typeof ApiKnowledgeBaseIdRoute
-    }
     '/api/knowledge-base/$id/files': {
       id: '/api/knowledge-base/$id/files'
       path: '/files'
@@ -511,6 +522,30 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface DashboardRouteRouteChildren {
+  DashboardApiKeysRoute: typeof DashboardApiKeysRoute
+  DashboardNewsRoute: typeof DashboardNewsRoute
+  DashboardServicesRoute: typeof DashboardServicesRoute
+  DashboardTeamRoute: typeof DashboardTeamRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardKnowledgeBaseIdRoute: typeof DashboardKnowledgeBaseIdRoute
+  DashboardKnowledgeBaseIndexRoute: typeof DashboardKnowledgeBaseIndexRoute
+}
+
+const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
+  DashboardApiKeysRoute: DashboardApiKeysRoute,
+  DashboardNewsRoute: DashboardNewsRoute,
+  DashboardServicesRoute: DashboardServicesRoute,
+  DashboardTeamRoute: DashboardTeamRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+  DashboardKnowledgeBaseIdRoute: DashboardKnowledgeBaseIdRoute,
+  DashboardKnowledgeBaseIndexRoute: DashboardKnowledgeBaseIndexRoute,
+}
+
+const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
+  DashboardRouteRouteChildren,
+)
 
 interface McpMusicRouteChildren {
   McpMusicMessageRoute: typeof McpMusicMessageRoute
@@ -574,12 +609,10 @@ const ApiKnowledgeBaseIdFilesRouteWithChildren =
 
 interface ApiKnowledgeBaseIdRouteChildren {
   ApiKnowledgeBaseIdFilesRoute: typeof ApiKnowledgeBaseIdFilesRouteWithChildren
-  ApiKnowledgeBaseIdSearchRoute: typeof ApiKnowledgeBaseIdSearchRoute
 }
 
 const ApiKnowledgeBaseIdRouteChildren: ApiKnowledgeBaseIdRouteChildren = {
   ApiKnowledgeBaseIdFilesRoute: ApiKnowledgeBaseIdFilesRouteWithChildren,
-  ApiKnowledgeBaseIdSearchRoute: ApiKnowledgeBaseIdSearchRoute,
 }
 
 const ApiKnowledgeBaseIdRouteWithChildren =
@@ -587,22 +620,17 @@ const ApiKnowledgeBaseIdRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRouteRoute: DashboardRouteRouteWithChildren,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
-  DashboardApiKeysRoute: DashboardApiKeysRoute,
-  DashboardServicesRoute: DashboardServicesRoute,
-  DashboardTeamRoute: DashboardTeamRoute,
   McpMusicRoute: McpMusicRouteWithChildren,
   McpNewsRoute: McpNewsRouteWithChildren,
   McpRagRoute: McpRagRouteWithChildren,
   McpWeatherRoute: McpWeatherRouteWithChildren,
-  DashboardIndexRoute: DashboardIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiKnowledgeBaseIdRoute: ApiKnowledgeBaseIdRouteWithChildren,
   ApiTasksTaskIdRoute: ApiTasksTaskIdRoute,
-  DashboardKnowledgeBaseIdRoute: DashboardKnowledgeBaseIdRoute,
   ApiKnowledgeBaseIndexRoute: ApiKnowledgeBaseIndexRoute,
-  DashboardKnowledgeBaseIndexRoute: DashboardKnowledgeBaseIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
