@@ -137,6 +137,245 @@ function getMockAlerts(location: string): WeatherAlert[] {
 	return alerts;
 }
 
+// ============================================
+// Exported data functions (used by server functions and MCP tools)
+// ============================================
+
+type WeatherDataWithNote = WeatherData & { note?: string };
+type WeatherForecastWithNote = WeatherForecast & { note?: string };
+type WeatherAlertsResult = {
+	location: string;
+	alerts: WeatherAlert[];
+	count: number;
+	note?: string;
+};
+
+/**
+ * 获取当前天气数据
+ */
+export async function fetchCurrentWeatherData(
+	location: string,
+): Promise<WeatherDataWithNote> {
+	const useRealApi = !!OPENWEATHER_API_KEY;
+
+	if (useRealApi) {
+		try {
+			const data = (await fetchWeather("weather", { q: location })) as {
+				name: string;
+				main: {
+					temp: number;
+					feels_like: number;
+					humidity: number;
+					pressure: number;
+				};
+				weather: Array<{ description: string }>;
+				wind: { speed: number; deg: number };
+				visibility: number;
+				sys: { sunrise: number; sunset: number };
+			};
+
+			return {
+				location: data.name,
+				temperature: data.main.temp,
+				feelsLike: data.main.feels_like,
+				humidity: data.main.humidity,
+				description: data.weather[0]?.description || "Unknown",
+				windSpeed: data.wind.speed,
+				windDirection: getWindDirection(data.wind.deg),
+				pressure: data.main.pressure,
+				visibility: data.visibility / 1000, // Convert to km
+				sunrise: new Date(data.sys.sunrise * 1000).toLocaleTimeString(),
+				sunset: new Date(data.sys.sunset * 1000).toLocaleTimeString(),
+			};
+		} catch {
+			return {
+				...getMockCurrentWeather(location),
+				note: "Using mock data due to API error",
+			};
+		}
+	}
+
+	return {
+		...getMockCurrentWeather(location),
+		note: "Demo mode - set OPENWEATHER_API_KEY for real data",
+	};
+}
+
+/**
+ * 获取天气预报数据
+ */
+export async function fetchForecastData(
+	location: string,
+	days = 5,
+): Promise<WeatherForecastWithNote> {
+	const useRealApi = !!OPENWEATHER_API_KEY;
+	const forecastDays = Math.min(Math.max(days, 1), 7);
+
+	if (useRealApi) {
+		try {
+			const data = (await fetchWeather("forecast", {
+				q: location,
+				cnt: String(forecastDays * 8),
+			})) as {
+				city: { name: string };
+				list: Array<{
+					dt_txt: string;
+					main: { temp_max: number; temp_min: number; humidity: number };
+					weather: Array<{ description: string }>;
+					wind: { speed: number };
+					pop: number;
+				}>;
+			};
+
+			// Group by day and extract daily highs/lows
+			const dailyData = new Map<
+				string,
+				{
+					highs: number[];
+					lows: number[];
+					descriptions: string[];
+					precipitation: number[];
+					humidity: number[];
+					windSpeed: number[];
+				}
+			>();
+
+			for (const item of data.list) {
+				const date = item.dt_txt.split(" ")[0];
+				if (!dailyData.has(date)) {
+					dailyData.set(date, {
+						highs: [],
+						lows: [],
+						descriptions: [],
+						precipitation: [],
+						humidity: [],
+						windSpeed: [],
+					});
+				}
+				const day = dailyData.get(date)!;
+				day.highs.push(item.main.temp_max);
+				day.lows.push(item.main.temp_min);
+				day.descriptions.push(item.weather[0]?.description || "");
+				day.precipitation.push(item.pop * 100);
+				day.humidity.push(item.main.humidity);
+				day.windSpeed.push(item.wind.speed);
+			}
+
+			const forecasts = Array.from(dailyData.entries())
+				.slice(0, forecastDays)
+				.map(([date, day]) => ({
+					date,
+					high: Math.round(Math.max(...day.highs)),
+					low: Math.round(Math.min(...day.lows)),
+					description:
+						day.descriptions[Math.floor(day.descriptions.length / 2)],
+					precipitation: Math.round(
+						day.precipitation.reduce((a, b) => a + b, 0) /
+							day.precipitation.length,
+					),
+					humidity: Math.round(
+						day.humidity.reduce((a, b) => a + b, 0) / day.humidity.length,
+					),
+					windSpeed: Math.round(
+						day.windSpeed.reduce((a, b) => a + b, 0) / day.windSpeed.length,
+					),
+				}));
+
+			return {
+				location: data.city.name,
+				forecasts,
+			};
+		} catch {
+			return {
+				...getMockForecast(location, forecastDays),
+				note: "Using mock data due to API error",
+			};
+		}
+	}
+
+	return {
+		...getMockForecast(location, forecastDays),
+		note: "Demo mode - set OPENWEATHER_API_KEY for real data",
+	};
+}
+
+/**
+ * 获取气象预警数据
+ */
+export async function fetchWeatherAlertsData(
+	location: string,
+): Promise<WeatherAlertsResult> {
+	// OpenWeatherMap One Call API 3.0 is needed for alerts (paid)
+	// Using mock data for demo
+	const alerts = getMockAlerts(location);
+
+	return {
+		location,
+		alerts,
+		count: alerts.length,
+		note: "Demo mode - alerts are simulated",
+	};
+}
+
+/**
+ * 根据坐标获取天气数据
+ */
+export async function fetchWeatherByCoords(
+	lat: number,
+	lon: number,
+): Promise<WeatherDataWithNote> {
+	const useRealApi = !!OPENWEATHER_API_KEY;
+
+	if (useRealApi) {
+		try {
+			const data = (await fetchWeather("weather", {
+				lat: String(lat),
+				lon: String(lon),
+			})) as {
+				name: string;
+				main: {
+					temp: number;
+					feels_like: number;
+					humidity: number;
+					pressure: number;
+				};
+				weather: Array<{ description: string }>;
+				wind: { speed: number; deg: number };
+				visibility: number;
+				sys: { sunrise: number; sunset: number };
+			};
+
+			return {
+				location: data.name,
+				temperature: data.main.temp,
+				feelsLike: data.main.feels_like,
+				humidity: data.main.humidity,
+				description: data.weather[0]?.description || "Unknown",
+				windSpeed: data.wind.speed,
+				windDirection: getWindDirection(data.wind.deg),
+				pressure: data.main.pressure,
+				visibility: data.visibility / 1000,
+				sunrise: new Date(data.sys.sunrise * 1000).toLocaleTimeString(),
+				sunset: new Date(data.sys.sunset * 1000).toLocaleTimeString(),
+			};
+		} catch {
+			return {
+				...getMockCurrentWeather(`${lat}, ${lon}`),
+				note: "Using mock data due to API error",
+			};
+		}
+	}
+
+	return {
+		...getMockCurrentWeather(`${lat}, ${lon}`),
+		note: "Demo mode - set OPENWEATHER_API_KEY for real data",
+	};
+}
+
+// ============================================
+// MCP Server
+// ============================================
+
 /**
  * Creates and configures the Weather MCP server
  */
@@ -145,8 +384,6 @@ export function createWeatherServer(_organizationId: string): McpServer {
 		name: "boilon-weather",
 		version: "1.0.0",
 	});
-
-	const useRealApi = !!OPENWEATHER_API_KEY;
 
 	// Tool: Get current weather
 	server.tool(
@@ -160,55 +397,9 @@ export function createWeatherServer(_organizationId: string): McpServer {
 		async ({
 			location,
 		}): Promise<{ content: Array<{ type: "text"; text: string }> }> => {
-			let weatherData: WeatherData;
-
-			if (useRealApi) {
-				try {
-					const data = (await fetchWeather("weather", { q: location })) as {
-						name: string;
-						main: {
-							temp: number;
-							feels_like: number;
-							humidity: number;
-							pressure: number;
-						};
-						weather: Array<{ description: string }>;
-						wind: { speed: number; deg: number };
-						visibility: number;
-						sys: { sunrise: number; sunset: number };
-					};
-
-					weatherData = {
-						location: data.name,
-						temperature: data.main.temp,
-						feelsLike: data.main.feels_like,
-						humidity: data.main.humidity,
-						description: data.weather[0]?.description || "Unknown",
-						windSpeed: data.wind.speed,
-						windDirection: getWindDirection(data.wind.deg),
-						pressure: data.main.pressure,
-						visibility: data.visibility / 1000, // Convert to km
-						sunrise: new Date(data.sys.sunrise * 1000).toLocaleTimeString(),
-						sunset: new Date(data.sys.sunset * 1000).toLocaleTimeString(),
-					};
-				} catch (error) {
-					weatherData = getMockCurrentWeather(location);
-					(weatherData as WeatherData & { note: string }).note =
-						"Using mock data due to API error";
-				}
-			} else {
-				weatherData = getMockCurrentWeather(location);
-				(weatherData as WeatherData & { note: string }).note =
-					"Demo mode - set OPENWEATHER_API_KEY for real data";
-			}
-
+			const weatherData = await fetchCurrentWeatherData(location);
 			return {
-				content: [
-					{
-						type: "text",
-						text: JSON.stringify(weatherData),
-					},
-				],
+				content: [{ type: "text", text: JSON.stringify(weatherData) }],
 			};
 		},
 	);
@@ -231,101 +422,9 @@ export function createWeatherServer(_organizationId: string): McpServer {
 			location,
 			days,
 		}): Promise<{ content: Array<{ type: "text"; text: string }> }> => {
-			const forecastDays = Math.min(Math.max(days, 1), 7);
-			let forecastData: WeatherForecast;
-
-			if (useRealApi) {
-				try {
-					const data = (await fetchWeather("forecast", {
-						q: location,
-						cnt: String(forecastDays * 8),
-					})) as {
-						city: { name: string };
-						list: Array<{
-							dt_txt: string;
-							main: { temp_max: number; temp_min: number; humidity: number };
-							weather: Array<{ description: string }>;
-							wind: { speed: number };
-							pop: number;
-						}>;
-					};
-
-					// Group by day and extract daily highs/lows
-					const dailyData = new Map<
-						string,
-						{
-							highs: number[];
-							lows: number[];
-							descriptions: string[];
-							precipitation: number[];
-							humidity: number[];
-							windSpeed: number[];
-						}
-					>();
-
-					for (const item of data.list) {
-						const date = item.dt_txt.split(" ")[0];
-						if (!dailyData.has(date)) {
-							dailyData.set(date, {
-								highs: [],
-								lows: [],
-								descriptions: [],
-								precipitation: [],
-								humidity: [],
-								windSpeed: [],
-							});
-						}
-						const day = dailyData.get(date)!;
-						day.highs.push(item.main.temp_max);
-						day.lows.push(item.main.temp_min);
-						day.descriptions.push(item.weather[0]?.description || "");
-						day.precipitation.push(item.pop * 100);
-						day.humidity.push(item.main.humidity);
-						day.windSpeed.push(item.wind.speed);
-					}
-
-					const forecasts = Array.from(dailyData.entries())
-						.slice(0, forecastDays)
-						.map(([date, day]) => ({
-							date,
-							high: Math.round(Math.max(...day.highs)),
-							low: Math.round(Math.min(...day.lows)),
-							description:
-								day.descriptions[Math.floor(day.descriptions.length / 2)],
-							precipitation: Math.round(
-								day.precipitation.reduce((a, b) => a + b, 0) /
-									day.precipitation.length,
-							),
-							humidity: Math.round(
-								day.humidity.reduce((a, b) => a + b, 0) / day.humidity.length,
-							),
-							windSpeed: Math.round(
-								day.windSpeed.reduce((a, b) => a + b, 0) / day.windSpeed.length,
-							),
-						}));
-
-					forecastData = {
-						location: data.city.name,
-						forecasts,
-					};
-				} catch (error) {
-					forecastData = getMockForecast(location, forecastDays);
-					(forecastData as WeatherForecast & { note: string }).note =
-						"Using mock data due to API error";
-				}
-			} else {
-				forecastData = getMockForecast(location, forecastDays);
-				(forecastData as WeatherForecast & { note: string }).note =
-					"Demo mode - set OPENWEATHER_API_KEY for real data";
-			}
-
+			const forecastData = await fetchForecastData(location, days);
 			return {
-				content: [
-					{
-						type: "text",
-						text: JSON.stringify(forecastData),
-					},
-				],
+				content: [{ type: "text", text: JSON.stringify(forecastData) }],
 			};
 		},
 	);
@@ -342,22 +441,9 @@ export function createWeatherServer(_organizationId: string): McpServer {
 		async ({
 			location,
 		}): Promise<{ content: Array<{ type: "text"; text: string }> }> => {
-			// OpenWeatherMap One Call API 3.0 is needed for alerts (paid)
-			// Using mock data for demo
-			const alerts = getMockAlerts(location);
-
+			const alertsData = await fetchWeatherAlertsData(location);
 			return {
-				content: [
-					{
-						type: "text",
-						text: JSON.stringify({
-							location,
-							alerts,
-							count: alerts.length,
-							note: "Demo mode - alerts are simulated",
-						}),
-					},
-				],
+				content: [{ type: "text", text: JSON.stringify(alertsData) }],
 			};
 		},
 	);
@@ -374,58 +460,9 @@ export function createWeatherServer(_organizationId: string): McpServer {
 			lat,
 			lon,
 		}): Promise<{ content: Array<{ type: "text"; text: string }> }> => {
-			let weatherData: WeatherData;
-
-			if (useRealApi) {
-				try {
-					const data = (await fetchWeather("weather", {
-						lat: String(lat),
-						lon: String(lon),
-					})) as {
-						name: string;
-						main: {
-							temp: number;
-							feels_like: number;
-							humidity: number;
-							pressure: number;
-						};
-						weather: Array<{ description: string }>;
-						wind: { speed: number; deg: number };
-						visibility: number;
-						sys: { sunrise: number; sunset: number };
-					};
-
-					weatherData = {
-						location: data.name,
-						temperature: data.main.temp,
-						feelsLike: data.main.feels_like,
-						humidity: data.main.humidity,
-						description: data.weather[0]?.description || "Unknown",
-						windSpeed: data.wind.speed,
-						windDirection: getWindDirection(data.wind.deg),
-						pressure: data.main.pressure,
-						visibility: data.visibility / 1000,
-						sunrise: new Date(data.sys.sunrise * 1000).toLocaleTimeString(),
-						sunset: new Date(data.sys.sunset * 1000).toLocaleTimeString(),
-					};
-				} catch (error) {
-					weatherData = getMockCurrentWeather(`${lat}, ${lon}`);
-					(weatherData as WeatherData & { note: string }).note =
-						"Using mock data due to API error";
-				}
-			} else {
-				weatherData = getMockCurrentWeather(`${lat}, ${lon}`);
-				(weatherData as WeatherData & { note: string }).note =
-					"Demo mode - set OPENWEATHER_API_KEY for real data";
-			}
-
+			const weatherData = await fetchWeatherByCoords(lat, lon);
 			return {
-				content: [
-					{
-						type: "text",
-						text: JSON.stringify(weatherData),
-					},
-				],
+				content: [{ type: "text", text: JSON.stringify(weatherData) }],
 			};
 		},
 	);

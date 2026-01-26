@@ -282,6 +282,325 @@ function getMockRecommendations(
 	return tracks.sort(() => Math.random() - 0.5).slice(0, limit);
 }
 
+// ============================================
+// Exported data functions (used by server functions and MCP tools)
+// ============================================
+
+type SearchTracksResult = {
+	query: string;
+	tracks: MusicTrack[];
+	count: number;
+	note?: string;
+};
+
+type GetArtistResult = {
+	artist?: MusicArtist;
+	error?: string;
+	query?: string;
+	note?: string;
+};
+
+type RecommendationsResult = {
+	recommendations: MusicTrack[];
+	seedArtists?: string[];
+	seedGenres?: string[];
+	count: number;
+	note?: string;
+};
+
+type GenresResult = {
+	genres: MusicGenre[];
+	count: number;
+	filter?: string;
+};
+
+type TopChartsResult = {
+	charts: {
+		country: string;
+		tracks: MusicTrack[];
+		count: number;
+	};
+	note?: string;
+};
+
+/**
+ * 搜索歌曲
+ */
+export async function searchTracksData(
+	query: string,
+	limit = 10,
+): Promise<SearchTracksResult> {
+	const useRealApi = !!LASTFM_API_KEY;
+	let tracks: MusicTrack[] = [];
+	let note: string | undefined;
+
+	if (useRealApi) {
+		try {
+			const data = (await fetchLastFm("track.search", {
+				track: query,
+				limit: String(limit),
+			})) as {
+				results: {
+					trackmatches: {
+						track: Array<{
+							name: string;
+							artist: string;
+							listeners: string;
+							mbid: string;
+						}>;
+					};
+				};
+			};
+
+			tracks = data.results.trackmatches.track.map((t, i) => ({
+				id: t.mbid || `track-${i}`,
+				name: t.name,
+				artist: t.artist,
+				album: "Unknown",
+				duration: 0,
+				popularity: Math.min(100, Math.floor(Number(t.listeners) / 10000)),
+			}));
+		} catch {
+			tracks = searchMockTracks(query, limit);
+			note = "Using mock data due to API error";
+		}
+	} else {
+		tracks = searchMockTracks(query, limit);
+		note = "Demo mode - set LASTFM_API_KEY for real data";
+	}
+
+	return { query, tracks, count: tracks.length, ...(note && { note }) };
+}
+
+/**
+ * 获取歌手信息
+ */
+export async function getArtistData(name: string): Promise<GetArtistResult> {
+	const useRealApi = !!LASTFM_API_KEY;
+	let artist: MusicArtist | undefined;
+	let note: string | undefined;
+
+	if (useRealApi) {
+		try {
+			const data = (await fetchLastFm("artist.getinfo", {
+				artist: name,
+			})) as {
+				artist: {
+					name: string;
+					mbid: string;
+					stats: { listeners: string; playcount: string };
+					tags: { tag: Array<{ name: string }> };
+					bio: { summary: string };
+				};
+			};
+
+			const topTracksData = (await fetchLastFm("artist.gettoptracks", {
+				artist: name,
+				limit: "5",
+			})) as {
+				toptracks: {
+					track: Array<{
+						name: string;
+						mbid: string;
+						duration: string;
+						listeners: string;
+					}>;
+				};
+			};
+
+			artist = {
+				id: data.artist.mbid || name,
+				name: data.artist.name,
+				genres: data.artist.tags.tag.map((t) => t.name),
+				popularity: Math.min(
+					100,
+					Math.floor(Number(data.artist.stats.listeners) / 100000),
+				),
+				followers: Number(data.artist.stats.listeners),
+				topTracks: topTracksData.toptracks.track.map((t, i) => ({
+					id: t.mbid || `track-${i}`,
+					name: t.name,
+					artist: name,
+					album: "Unknown",
+					duration: Number(t.duration),
+					popularity: Math.min(
+						100,
+						Math.floor(Number(t.listeners) / 10000),
+					),
+				})),
+			};
+		} catch {
+			artist = findMockArtist(name);
+			note = "Using mock data due to API error";
+		}
+	} else {
+		artist = findMockArtist(name);
+		note = "Demo mode - set LASTFM_API_KEY for real data";
+	}
+
+	if (!artist) {
+		return { error: "Artist not found", query: name };
+	}
+
+	return { artist, ...(note && { note }) };
+}
+
+/**
+ * 获取音乐推荐
+ */
+export async function getRecommendationsData(
+	seedArtists?: string[],
+	seedGenres?: string[],
+	limit = 10,
+): Promise<RecommendationsResult> {
+	const useRealApi = !!LASTFM_API_KEY;
+	let tracks: MusicTrack[];
+	let note: string | undefined;
+
+	if (useRealApi && seedArtists && seedArtists.length > 0) {
+		try {
+			// Use Last.fm's similar artists and their top tracks
+			const similarData = (await fetchLastFm("artist.getsimilar", {
+				artist: seedArtists[0],
+				limit: "5",
+			})) as {
+				similarartists: { artist: Array<{ name: string }> };
+			};
+
+			const allTracks: MusicTrack[] = [];
+
+			for (const similar of similarData.similarartists.artist) {
+				const topTracks = (await fetchLastFm("artist.gettoptracks", {
+					artist: similar.name,
+					limit: "3",
+				})) as {
+					toptracks: {
+						track: Array<{
+							name: string;
+							mbid: string;
+							duration: string;
+							listeners: string;
+						}>;
+					};
+				};
+
+				for (const t of topTracks.toptracks.track) {
+					allTracks.push({
+						id: t.mbid || `track-${allTracks.length}`,
+						name: t.name,
+						artist: similar.name,
+						album: "Unknown",
+						duration: Number(t.duration),
+						popularity: Math.min(
+							100,
+							Math.floor(Number(t.listeners) / 10000),
+						),
+					});
+				}
+			}
+
+			tracks = allTracks.slice(0, limit);
+		} catch {
+			tracks = getMockRecommendations(seedArtists, seedGenres, limit);
+			note = "Using mock data due to API error";
+		}
+	} else {
+		tracks = getMockRecommendations(seedArtists, seedGenres, limit);
+		note = useRealApi
+			? "Provide seedArtists for real recommendations"
+			: "Demo mode - set LASTFM_API_KEY for real data";
+	}
+
+	return {
+		recommendations: tracks,
+		seedArtists,
+		seedGenres,
+		count: tracks.length,
+		...(note && { note }),
+	};
+}
+
+/**
+ * 获取曲风分类
+ */
+export function getGenresData(parentGenre?: string): GenresResult {
+	let genres = mockGenres;
+
+	if (parentGenre) {
+		genres = mockGenres.filter(
+			(g) =>
+				g.parentGenre?.toLowerCase() === parentGenre.toLowerCase() ||
+				g.id === parentGenre.toLowerCase(),
+		);
+	}
+
+	return {
+		genres,
+		count: genres.length,
+		...(parentGenre && { filter: parentGenre }),
+	};
+}
+
+/**
+ * 获取热门排行
+ */
+export async function getTopChartsData(
+	country = "global",
+	limit = 10,
+): Promise<TopChartsResult> {
+	const useRealApi = !!LASTFM_API_KEY;
+	let tracks: MusicTrack[];
+	let note: string | undefined;
+
+	if (useRealApi) {
+		try {
+			const data = (await fetchLastFm("chart.gettoptracks", {
+				limit: String(limit),
+			})) as {
+				tracks: {
+					track: Array<{
+						name: string;
+						mbid: string;
+						duration: string;
+						listeners: string;
+						artist: { name: string };
+					}>;
+				};
+			};
+
+			tracks = data.tracks.track.map((t, i) => ({
+				id: t.mbid || `chart-${i}`,
+				name: t.name,
+				artist: t.artist.name,
+				album: "Unknown",
+				duration: Number(t.duration),
+				popularity: 100 - i * 2, // Rank-based popularity
+			}));
+		} catch {
+			tracks = mockArtists
+				.flatMap((a) => a.topTracks || [])
+				.sort((a, b) => b.popularity - a.popularity)
+				.slice(0, limit);
+			note = "Using mock data due to API error";
+		}
+	} else {
+		tracks = mockArtists
+			.flatMap((a) => a.topTracks || [])
+			.sort((a, b) => b.popularity - a.popularity)
+			.slice(0, limit);
+		note = "Demo mode - set LASTFM_API_KEY for real data";
+	}
+
+	return {
+		charts: { country, tracks, count: tracks.length },
+		...(note && { note }),
+	};
+}
+
+// ============================================
+// MCP Server
+// ============================================
+
 /**
  * Creates and configures the Music MCP server
  */
@@ -290,8 +609,6 @@ export function createMusicServer(_organizationId: string): McpServer {
 		name: "boilon-music",
 		version: "1.0.0",
 	});
-
-	const useRealApi = !!LASTFM_API_KEY;
 
 	// Tool: Search tracks
 	server.tool(
@@ -309,56 +626,9 @@ export function createMusicServer(_organizationId: string): McpServer {
 			query,
 			limit,
 		}): Promise<{ content: Array<{ type: "text"; text: string }> }> => {
-			let tracks: MusicTrack[] = [];
-			let note: string | undefined;
-
-			if (useRealApi) {
-				try {
-					const data = (await fetchLastFm("track.search", {
-						track: query,
-						limit: String(limit),
-					})) as {
-						results: {
-							trackmatches: {
-								track: Array<{
-									name: string;
-									artist: string;
-									listeners: string;
-									mbid: string;
-								}>;
-							};
-						};
-					};
-
-					tracks = data.results.trackmatches.track.map((t, i) => ({
-						id: t.mbid || `track-${i}`,
-						name: t.name,
-						artist: t.artist,
-						album: "Unknown",
-						duration: 0,
-						popularity: Math.min(100, Math.floor(Number(t.listeners) / 10000)),
-					}));
-				} catch (error) {
-					tracks = searchMockTracks(query, limit);
-					note = "Using mock data due to API error";
-				}
-			} else {
-				tracks = searchMockTracks(query, limit);
-				note = "Demo mode - set LASTFM_API_KEY for real data";
-			}
-
+			const result = await searchTracksData(query, limit);
 			return {
-				content: [
-					{
-						type: "text",
-						text: JSON.stringify({
-							query,
-							tracks,
-							count: tracks.length,
-							...(note && { note }),
-						}),
-					},
-				],
+				content: [{ type: "text", text: JSON.stringify(result) }],
 			};
 		},
 	);
@@ -373,91 +643,9 @@ export function createMusicServer(_organizationId: string): McpServer {
 		async ({
 			name,
 		}): Promise<{ content: Array<{ type: "text"; text: string }> }> => {
-			let artist: MusicArtist | undefined;
-			let note: string | undefined;
-
-			if (useRealApi) {
-				try {
-					const data = (await fetchLastFm("artist.getinfo", {
-						artist: name,
-					})) as {
-						artist: {
-							name: string;
-							mbid: string;
-							stats: { listeners: string; playcount: string };
-							tags: { tag: Array<{ name: string }> };
-							bio: { summary: string };
-						};
-					};
-
-					const topTracksData = (await fetchLastFm("artist.gettoptracks", {
-						artist: name,
-						limit: "5",
-					})) as {
-						toptracks: {
-							track: Array<{
-								name: string;
-								mbid: string;
-								duration: string;
-								listeners: string;
-							}>;
-						};
-					};
-
-					artist = {
-						id: data.artist.mbid || name,
-						name: data.artist.name,
-						genres: data.artist.tags.tag.map((t) => t.name),
-						popularity: Math.min(
-							100,
-							Math.floor(Number(data.artist.stats.listeners) / 100000),
-						),
-						followers: Number(data.artist.stats.listeners),
-						topTracks: topTracksData.toptracks.track.map((t, i) => ({
-							id: t.mbid || `track-${i}`,
-							name: t.name,
-							artist: name,
-							album: "Unknown",
-							duration: Number(t.duration),
-							popularity: Math.min(
-								100,
-								Math.floor(Number(t.listeners) / 10000),
-							),
-						})),
-					};
-				} catch (error) {
-					artist = findMockArtist(name);
-					note = "Using mock data due to API error";
-				}
-			} else {
-				artist = findMockArtist(name);
-				note = "Demo mode - set LASTFM_API_KEY for real data";
-			}
-
-			if (!artist) {
-				return {
-					content: [
-						{
-							type: "text",
-							text: JSON.stringify({
-								error: "Artist not found",
-								query: name,
-							}),
-						},
-					],
-				};
-			}
-
+			const result = await getArtistData(name);
 			return {
-				content: [
-					{
-						type: "text",
-						text: JSON.stringify({
-							artist,
-							...(note && { note }),
-						}),
-					},
-				],
+				content: [{ type: "text", text: JSON.stringify(result) }],
 			};
 		},
 	);
@@ -486,76 +674,13 @@ export function createMusicServer(_organizationId: string): McpServer {
 			seedGenres,
 			limit,
 		}): Promise<{ content: Array<{ type: "text"; text: string }> }> => {
-			let tracks: MusicTrack[];
-			let note: string | undefined;
-
-			if (useRealApi && seedArtists && seedArtists.length > 0) {
-				try {
-					// Use Last.fm's similar artists and their top tracks
-					const similarData = (await fetchLastFm("artist.getsimilar", {
-						artist: seedArtists[0],
-						limit: "5",
-					})) as {
-						similarartists: { artist: Array<{ name: string }> };
-					};
-
-					const allTracks: MusicTrack[] = [];
-
-					for (const similar of similarData.similarartists.artist) {
-						const topTracks = (await fetchLastFm("artist.gettoptracks", {
-							artist: similar.name,
-							limit: "3",
-						})) as {
-							toptracks: {
-								track: Array<{
-									name: string;
-									mbid: string;
-									duration: string;
-									listeners: string;
-								}>;
-							};
-						};
-
-						for (const t of topTracks.toptracks.track) {
-							allTracks.push({
-								id: t.mbid || `track-${allTracks.length}`,
-								name: t.name,
-								artist: similar.name,
-								album: "Unknown",
-								duration: Number(t.duration),
-								popularity: Math.min(
-									100,
-									Math.floor(Number(t.listeners) / 10000),
-								),
-							});
-						}
-					}
-
-					tracks = allTracks.slice(0, limit);
-				} catch (error) {
-					tracks = getMockRecommendations(seedArtists, seedGenres, limit);
-					note = "Using mock data due to API error";
-				}
-			} else {
-				tracks = getMockRecommendations(seedArtists, seedGenres, limit);
-				note = useRealApi
-					? "Provide seedArtists for real recommendations"
-					: "Demo mode - set LASTFM_API_KEY for real data";
-			}
-
+			const result = await getRecommendationsData(
+				seedArtists,
+				seedGenres,
+				limit,
+			);
 			return {
-				content: [
-					{
-						type: "text",
-						text: JSON.stringify({
-							recommendations: tracks,
-							seedArtists,
-							seedGenres,
-							count: tracks.length,
-							...(note && { note }),
-						}),
-					},
-				],
+				content: [{ type: "text", text: JSON.stringify(result) }],
 			};
 		},
 	);
@@ -573,27 +698,9 @@ export function createMusicServer(_organizationId: string): McpServer {
 		async ({
 			parentGenre,
 		}): Promise<{ content: Array<{ type: "text"; text: string }> }> => {
-			let genres = mockGenres;
-
-			if (parentGenre) {
-				genres = mockGenres.filter(
-					(g) =>
-						g.parentGenre?.toLowerCase() === parentGenre.toLowerCase() ||
-						g.id === parentGenre.toLowerCase(),
-				);
-			}
-
+			const result = getGenresData(parentGenre);
 			return {
-				content: [
-					{
-						type: "text",
-						text: JSON.stringify({
-							genres,
-							count: genres.length,
-							...(parentGenre && { filter: parentGenre }),
-						}),
-					},
-				],
+				content: [{ type: "text", text: JSON.stringify(result) }],
 			};
 		},
 	);
@@ -614,62 +721,9 @@ export function createMusicServer(_organizationId: string): McpServer {
 			country,
 			limit,
 		}): Promise<{ content: Array<{ type: "text"; text: string }> }> => {
-			let tracks: MusicTrack[];
-			let note: string | undefined;
-
-			if (useRealApi) {
-				try {
-					const data = (await fetchLastFm("chart.gettoptracks", {
-						limit: String(limit),
-					})) as {
-						tracks: {
-							track: Array<{
-								name: string;
-								mbid: string;
-								duration: string;
-								listeners: string;
-								artist: { name: string };
-							}>;
-						};
-					};
-
-					tracks = data.tracks.track.map((t, i) => ({
-						id: t.mbid || `chart-${i}`,
-						name: t.name,
-						artist: t.artist.name,
-						album: "Unknown",
-						duration: Number(t.duration),
-						popularity: 100 - i * 2, // Rank-based popularity
-					}));
-				} catch (error) {
-					tracks = mockArtists
-						.flatMap((a) => a.topTracks || [])
-						.sort((a, b) => b.popularity - a.popularity)
-						.slice(0, limit);
-					note = "Using mock data due to API error";
-				}
-			} else {
-				tracks = mockArtists
-					.flatMap((a) => a.topTracks || [])
-					.sort((a, b) => b.popularity - a.popularity)
-					.slice(0, limit);
-				note = "Demo mode - set LASTFM_API_KEY for real data";
-			}
-
+			const result = await getTopChartsData(country, limit);
 			return {
-				content: [
-					{
-						type: "text",
-						text: JSON.stringify({
-							charts: {
-								country,
-								tracks,
-								count: tracks.length,
-							},
-							...(note && { note }),
-						}),
-					},
-				],
+				content: [{ type: "text", text: JSON.stringify(result) }],
 			};
 		},
 	);

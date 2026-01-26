@@ -41,7 +41,7 @@ function LoginPage() {
 	};
 
 	return (
-		<div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
+		<div className="min-h-screen bg-background flex items-center justify-center p-4">
 			{/* Background */}
 			<div className="fixed inset-0 pointer-events-none">
 				<div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[128px]" />
@@ -55,15 +55,15 @@ function LoginPage() {
 						<div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
 							<Zap className="w-5 h-5 text-white" />
 						</div>
-						<span className="text-2xl font-bold text-white">Boilon MCP</span>
+						<span className="text-2xl font-bold text-foreground">Boilon MCP</span>
 					</Link>
 				</div>
 
 				{/* Card */}
-				<div className="bg-white/[0.02] border border-white/10 rounded-2xl p-8">
+				<div className="bg-card border border-border rounded-2xl p-8">
 					<div className="text-center mb-6">
-						<h1 className="text-2xl font-bold text-white">欢迎回来</h1>
-						<p className="text-white/50 mt-2">登录以管理您的 MCP 服务</p>
+						<h1 className="text-2xl font-bold text-foreground">欢迎回来</h1>
+						<p className="text-muted-foreground mt-2">登录以管理您的 MCP 服务</p>
 					</div>
 
 					<form onSubmit={handleSubmit} className="space-y-4">
@@ -74,23 +74,23 @@ function LoginPage() {
 						)}
 
 						<div>
-							<Label className="text-white/70">邮箱</Label>
+							<Label className="text-foreground/70">邮箱</Label>
 							<Input
 								type="email"
 								placeholder="your@email.com"
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
-								className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+								className="mt-2 bg-muted border-border text-foreground placeholder:text-muted-foreground/60"
 								required
 							/>
 						</div>
 
 						<div>
 							<div className="flex items-center justify-between">
-								<Label className="text-white/70">密码</Label>
+								<Label className="text-foreground/70">密码</Label>
 								<a
 									href="#"
-									className="text-xs text-cyan-400 hover:text-cyan-300"
+									className="text-xs text-cyan-600 hover:text-cyan-500"
 								>
 									忘记密码？
 								</a>
@@ -100,7 +100,7 @@ function LoginPage() {
 								placeholder="••••••••"
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
-								className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+								className="mt-2 bg-muted border-border text-foreground placeholder:text-muted-foreground/60"
 								required
 							/>
 						</div>
@@ -114,24 +114,24 @@ function LoginPage() {
 						</Button>
 					</form>
 
-					<div className="mt-6 text-center text-sm text-white/50">
+					<div className="mt-6 text-center text-sm text-muted-foreground">
 						还没有账号？{" "}
 						<Link
 							to="/auth/register"
-							className="text-cyan-400 hover:text-cyan-300"
+							className="text-cyan-600 hover:text-cyan-500"
 						>
 							立即注册
 						</Link>
 					</div>
 				</div>
 
-				<div className="mt-8 text-center text-xs text-white/30">
+				<div className="mt-8 text-center text-xs text-muted-foreground/60">
 					登录即表示您同意我们的{" "}
-					<a href="#" className="text-white/50 hover:text-white/70">
+					<a href="#" className="text-muted-foreground hover:text-foreground/70">
 						服务条款
 					</a>{" "}
 					和{" "}
-					<a href="#" className="text-white/50 hover:text-white/70">
+					<a href="#" className="text-muted-foreground hover:text-foreground/70">
 						隐私政策
 					</a>
 				</div>

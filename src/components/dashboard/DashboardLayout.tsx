@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
 	BarChart3,
+	BookOpen,
 	Building2,
 	Cloud,
 	Database,
@@ -24,15 +25,16 @@ interface DashboardLayoutProps {
 
 const navigation = [
 	{ name: "概览", href: "/dashboard", icon: LayoutDashboard },
+	{ name: "知识库", href: "/dashboard/knowledge-base", icon: BookOpen },
 	{ name: "服务管理", href: "/dashboard/services", icon: Settings },
 	{ name: "API 密钥", href: "/dashboard/api-keys", icon: Key },
 	{ name: "团队管理", href: "/dashboard/team", icon: Users },
 ];
 
 const services = [
-	{ name: "RAG 知识库", href: "/dashboard/services/rag", icon: Database },
-	{ name: "天气服务", href: "/dashboard/services/weather", icon: Cloud },
-	{ name: "音乐服务", href: "/dashboard/services/music", icon: Music },
+	{ name: "RAG 知识库", href: "/dashboard/knowledge-base", icon: Database },
+	{ name: "天气服务", href: "/dashboard/services", icon: Cloud },
+	{ name: "音乐服务", href: "/dashboard/services", icon: Music },
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -53,7 +55,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 	};
 
 	return (
-		<div className="min-h-screen bg-[#0a0a0f]">
+		<div className="min-h-screen bg-background">
 			{/* Mobile sidebar backdrop */}
 			{sidebarOpen && (
 				<div
@@ -64,21 +66,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
 			{/* Sidebar */}
 			<aside
-				className={`fixed top-0 left-0 z-50 h-full w-64 bg-[#0d0d14] border-r border-white/10 transform transition-transform duration-300 lg:translate-x-0 ${
+				className={`fixed top-0 left-0 z-50 h-full w-64 bg-card border-r border-border transform transition-transform duration-300 lg:translate-x-0 ${
 					sidebarOpen ? "translate-x-0" : "-translate-x-full"
 				}`}
 			>
 				<div className="flex flex-col h-full">
 					{/* Logo */}
-					<div className="flex items-center justify-between h-16 px-4 border-b border-white/10">
+					<div className="flex items-center justify-between h-16 px-4 border-b border-border">
 						<Link to="/" className="flex items-center gap-3">
 							<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
 								<Zap className="w-4 h-4 text-white" />
 							</div>
-							<span className="text-lg font-bold text-white">Boilon MCP</span>
+							<span className="text-lg font-bold text-foreground">Boilon MCP</span>
 						</Link>
 						<button
-							className="lg:hidden p-2 text-white/60 hover:text-white"
+							className="lg:hidden p-2 text-muted-foreground hover:text-foreground"
 							onClick={() => setSidebarOpen(false)}
 						>
 							<X className="w-5 h-5" />
@@ -94,8 +96,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 								onClick={() => setSidebarOpen(false)}
 								className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
 									isActive(item.href)
-										? "bg-cyan-500/10 text-cyan-400"
-										: "text-white/60 hover:text-white hover:bg-white/5"
+										? "bg-cyan-500/10 text-cyan-600"
+										: "text-muted-foreground hover:text-foreground hover:bg-muted"
 								}`}
 							>
 								<item.icon className="w-5 h-5" />
@@ -105,7 +107,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
 						{/* Services section */}
 						<div className="pt-6">
-							<div className="px-3 mb-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
+							<div className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
 								MCP 服务
 							</div>
 							{services.map((service) => (
@@ -115,8 +117,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 									onClick={() => setSidebarOpen(false)}
 									className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
 										isActive(service.href)
-											? "bg-cyan-500/10 text-cyan-400"
-											: "text-white/60 hover:text-white hover:bg-white/5"
+											? "bg-cyan-500/10 text-cyan-600"
+											: "text-muted-foreground hover:text-foreground hover:bg-muted"
 									}`}
 								>
 									<service.icon className="w-5 h-5" />
@@ -127,7 +129,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 					</nav>
 
 					{/* User section */}
-					<div className="p-4 border-t border-white/10">
+					<div className="p-4 border-t border-border">
 						{session?.user ? (
 							<div className="space-y-3">
 								<div className="flex items-center gap-3">
@@ -136,10 +138,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 											session.user.email?.[0]?.toUpperCase()}
 									</div>
 									<div className="flex-1 min-w-0">
-										<div className="text-sm font-medium text-white truncate">
+										<div className="text-sm font-medium text-foreground truncate">
 											{session.user.name || "用户"}
 										</div>
-										<div className="text-xs text-white/40 truncate">
+										<div className="text-xs text-muted-foreground truncate">
 											{session.user.email}
 										</div>
 									</div>
@@ -147,7 +149,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 								<Button
 									variant="ghost"
 									size="sm"
-									className="w-full justify-start text-white/60 hover:text-white hover:bg-white/5"
+									className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted"
 									onClick={handleSignOut}
 								>
 									<LogOut className="w-4 h-4 mr-2" />
@@ -168,10 +170,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 			{/* Main content */}
 			<div className="lg:pl-64">
 				{/* Top bar */}
-				<header className="sticky top-0 z-30 h-16 bg-[#0a0a0f]/80 backdrop-blur-sm border-b border-white/10">
+				<header className="sticky top-0 z-30 h-16 bg-background/80 backdrop-blur-sm border-b border-border">
 					<div className="flex items-center justify-between h-full px-4 lg:px-8">
 						<button
-							className="lg:hidden p-2 text-white/60 hover:text-white"
+							className="lg:hidden p-2 text-muted-foreground hover:text-foreground"
 							onClick={() => setSidebarOpen(true)}
 						>
 							<Menu className="w-6 h-6" />
@@ -182,7 +184,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 								<Button
 									variant="outline"
 									size="sm"
-									className="border-white/20 text-white/70 hover:text-white hover:bg-white/5"
+									className="border-border text-foreground/70 hover:text-foreground hover:bg-muted"
 								>
 									<BarChart3 className="w-4 h-4 mr-2" />
 									用量统计

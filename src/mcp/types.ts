@@ -1,4 +1,4 @@
-export type McpService = "rag" | "weather" | "music";
+export type McpService = "rag" | "weather" | "music" | "news";
 
 export interface McpToolResult {
 	content: Array<{
@@ -113,4 +113,24 @@ export interface MusicGenre {
 	name: string;
 	description?: string;
 	parentGenre?: string;
+}
+
+// News Service Types (Bocha AI)
+export interface NewsArticle {
+	id: string;
+	title: string;
+	url: string;
+	source: string;
+	sourceIcon?: string;
+	snippet: string;
+	summary?: string;
+	publishedAt?: string;
+}
+
+export interface NewsSearchResult {
+	query: string;
+	articles: NewsArticle[];
+	totalResults: number;
+	topic?: string;
+	category?: string;
 }

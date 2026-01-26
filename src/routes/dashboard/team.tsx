@@ -1,16 +1,16 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
 	Crown,
+	Loader2,
 	Mail,
-	MoreVertical,
-	Plus,
 	Shield,
 	Trash2,
 	User,
 	UserPlus,
 	Users,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,141 +22,194 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useSession, organization } from "@/lib/auth-client";
+import { organization, useActiveOrganization } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/dashboard/team")({
 	component: TeamPage,
 });
 
-interface TeamMember {
-	id: string;
-	name: string;
-	email: string;
-	role: "owner" | "admin" | "developer" | "viewer";
-	joinedAt: string;
-	lastActive: string;
-	avatar?: string;
-}
-
-interface Invitation {
-	id: string;
-	email: string;
-	role: "admin" | "developer" | "viewer";
-	sentAt: string;
-	status: "pending" | "expired";
-}
-
 const roleLabels: Record<string, { label: string; color: string }> = {
 	owner: { label: "所有者", color: "text-amber-400 bg-amber-500/10" },
 	admin: { label: "管理员", color: "text-purple-400 bg-purple-500/10" },
-	developer: { label: "开发者", color: "text-cyan-400 bg-cyan-500/10" },
-	viewer: { label: "观察者", color: "text-white/60 bg-white/5" },
+	member: { label: "成员", color: "text-cyan-600 bg-cyan-500/10" },
 };
 
+function formatDate(date: Date | string) {
+	return new Date(date).toLocaleDateString("zh-CN", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+	});
+}
+
+function getInvitationStatus(invitation: { status: string; expiresAt: Date }) {
+	if (
+		invitation.status === "pending" &&
+		new Date(invitation.expiresAt) < new Date()
+	) {
+		return "expired" as const;
+	}
+	return invitation.status as "pending" | "accepted" | "rejected" | "canceled";
+}
+
 function TeamPage() {
-	const { data: session } = useSession();
+	const { data: activeOrg } = useActiveOrganization();
+	const queryClient = useQueryClient();
 	const [showInviteModal, setShowInviteModal] = useState(false);
 	const [inviteEmail, setInviteEmail] = useState("");
-	const [inviteRole, setInviteRole] = useState<"admin" | "developer" | "viewer">(
-		"developer",
+	const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
+
+	// 获取组织完整数据（成员 + 邀请）
+	const { data: fullOrg, isLoading } = useQuery({
+		queryKey: ["organization", activeOrg?.id],
+		queryFn: async () => {
+			const result = await organization.getFullOrganization({
+				organizationId: activeOrg?.id,
+			});
+			if (result.error) throw new Error(result.error.message);
+			return result.data;
+		},
+		enabled: !!activeOrg?.id,
+	});
+
+	const members = fullOrg?.members ?? [];
+	const invitations = fullOrg?.invitations ?? [];
+	const pendingInvitations = invitations.filter(
+		(i) => getInvitationStatus(i) === "pending",
 	);
-	const [isInviting, setIsInviting] = useState(false);
 
-	// Mock data
-	const [members, setMembers] = useState<TeamMember[]>([
-		{
-			id: "1",
-			name: session?.user?.name || "当前用户",
-			email: session?.user?.email || "user@example.com",
-			role: "owner",
-			joinedAt: "2025-01-01",
-			lastActive: "刚刚",
+	// 邀请成员
+	const inviteMutation = useMutation({
+		mutationKey: ["organization", "invite"],
+		mutationFn: async ({ email, role }: { email: string; role: string }) => {
+			const result = await organization.inviteMember({
+				email,
+				role,
+				organizationId: activeOrg?.id,
+			});
+			if (result.error) throw new Error(result.error.message);
+			return result.data;
 		},
-		{
-			id: "2",
-			name: "张工程师",
-			email: "zhang@example.com",
-			role: "admin",
-			joinedAt: "2025-01-10",
-			lastActive: "1 小时前",
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["organization", activeOrg?.id],
+			});
 		},
-		{
-			id: "3",
-			name: "李开发",
-			email: "li@example.com",
-			role: "developer",
-			joinedAt: "2025-01-15",
-			lastActive: "3 小时前",
-		},
-		{
-			id: "4",
-			name: "王测试",
-			email: "wang@example.com",
-			role: "developer",
-			joinedAt: "2025-01-18",
-			lastActive: "1 天前",
-		},
-	]);
+	});
 
-	const [invitations, setInvitations] = useState<Invitation[]>([
-		{
-			id: "i1",
-			email: "new-dev@example.com",
-			role: "developer",
-			sentAt: "2025-01-20",
-			status: "pending",
+	// 移除成员
+	const removeMutation = useMutation({
+		mutationKey: ["organization", "remove"],
+		mutationFn: async (memberIdOrEmail: string) => {
+			const result = await organization.removeMember({
+				memberIdOrEmail,
+				organizationId: activeOrg?.id,
+			});
+			if (result.error) throw new Error(result.error.message);
+			return result.data;
 		},
-	]);
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["organization", activeOrg?.id],
+			});
+		},
+	});
 
-	const handleInvite = async () => {
+	// 更新角色
+	const updateRoleMutation = useMutation({
+		mutationKey: ["organization", "updateRole"],
+		mutationFn: async ({
+			memberId,
+			role,
+		}: {
+			memberId: string;
+			role: string;
+		}) => {
+			const result = await organization.updateMemberRole({
+				memberId,
+				role,
+				organizationId: activeOrg?.id,
+			});
+			if (result.error) throw new Error(result.error.message);
+			return result.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["organization", activeOrg?.id],
+			});
+		},
+	});
+
+	// 取消邀请
+	const cancelInvitationMutation = useMutation({
+		mutationKey: ["organization", "cancelInvitation"],
+		mutationFn: async (invitationId: string) => {
+			const result = await organization.cancelInvitation({
+				invitationId,
+			});
+			if (result.error) throw new Error(result.error.message);
+			return result.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["organization", activeOrg?.id],
+			});
+		},
+	});
+
+	const handleInvite = useCallback(async () => {
 		if (!inviteEmail.trim()) return;
-
-		setIsInviting(true);
 		try {
-			// TODO: 调用 Better Auth organization.inviteMember
-			// await organization.inviteMember({
-			//   email: inviteEmail,
-			//   role: inviteRole,
-			// });
-
-			// 模拟添加邀请
-			setInvitations((prev) => [
-				{
-					id: Date.now().toString(),
-					email: inviteEmail,
-					role: inviteRole,
-					sentAt: new Date().toISOString().split("T")[0],
-					status: "pending",
-				},
-				...prev,
-			]);
-
+			await inviteMutation.mutateAsync({
+				email: inviteEmail,
+				role: inviteRole,
+			});
 			setShowInviteModal(false);
 			setInviteEmail("");
-			setInviteRole("developer");
-		} catch (error) {
-			console.error("Failed to invite member:", error);
-		} finally {
-			setIsInviting(false);
+			setInviteRole("member");
+		} catch (err) {
+			console.error("Failed to invite member:", err);
 		}
-	};
+	}, [inviteEmail, inviteRole, inviteMutation]);
 
-	const handleRemoveMember = (id: string) => {
-		setMembers((prev) => prev.filter((m) => m.id !== id));
-	};
+	const handleRemoveMember = useCallback(
+		(memberId: string) => {
+			removeMutation.mutate(memberId);
+		},
+		[removeMutation],
+	);
 
-	const handleCancelInvitation = (id: string) => {
-		setInvitations((prev) => prev.filter((i) => i.id !== id));
-	};
+	const handleCancelInvitation = useCallback(
+		(invitationId: string) => {
+			cancelInvitationMutation.mutate(invitationId);
+		},
+		[cancelInvitationMutation],
+	);
 
-	const handleChangeRole = (
-		memberId: string,
-		newRole: "admin" | "developer" | "viewer",
-	) => {
-		setMembers((prev) =>
-			prev.map((m) => (m.id === memberId ? { ...m, role: newRole } : m)),
+	const handleChangeRole = useCallback(
+		(memberId: string, newRole: "admin" | "member") => {
+			updateRoleMutation.mutate({ memberId, role: newRole });
+		},
+		[updateRoleMutation],
+	);
+
+	// 未选择组织
+	if (!activeOrg) {
+		return (
+			<DashboardLayout>
+				<div className="space-y-8">
+					<div>
+						<h1 className="text-2xl font-bold text-foreground">团队管理</h1>
+						<p className="text-muted-foreground mt-1">管理团队成员和权限</p>
+					</div>
+					<div className="bg-card border border-border rounded-xl p-12 text-center">
+						<Users className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+						<div className="text-muted-foreground">请先创建或选择一个组织</div>
+					</div>
+				</div>
+			</DashboardLayout>
 		);
-	};
+	}
 
 	return (
 		<DashboardLayout>
@@ -164,8 +217,8 @@ function TeamPage() {
 				{/* Header */}
 				<div className="flex items-center justify-between">
 					<div>
-						<h1 className="text-2xl font-bold text-white">团队管理</h1>
-						<p className="text-white/50 mt-1">管理团队成员和权限</p>
+						<h1 className="text-2xl font-bold text-foreground">团队管理</h1>
+						<p className="text-muted-foreground mt-1">管理团队成员和权限</p>
 					</div>
 					<Button
 						className="bg-cyan-500 hover:bg-cyan-600"
@@ -178,223 +231,246 @@ function TeamPage() {
 
 				{/* Team Stats */}
 				<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-					<div className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
+					<div className="bg-card border border-border rounded-xl p-5">
 						<div className="flex items-center gap-3">
 							<div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-								<Users className="w-5 h-5 text-cyan-400" />
+								<Users className="w-5 h-5 text-cyan-600" />
 							</div>
 							<div>
-								<div className="text-2xl font-bold text-white">
+								<div className="text-2xl font-bold text-foreground">
 									{members.length}
 								</div>
-								<div className="text-sm text-white/50">团队成员</div>
+								<div className="text-sm text-muted-foreground">团队成员</div>
 							</div>
 						</div>
 					</div>
-					<div className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
+					<div className="bg-card border border-border rounded-xl p-5">
 						<div className="flex items-center gap-3">
 							<div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
 								<Shield className="w-5 h-5 text-purple-400" />
 							</div>
 							<div>
-								<div className="text-2xl font-bold text-white">
-									{members.filter((m) => m.role === "admin").length + 1}
+								<div className="text-2xl font-bold text-foreground">
+									{
+										members.filter(
+											(m) => m.role === "admin" || m.role === "owner",
+										).length
+									}
 								</div>
-								<div className="text-sm text-white/50">管理员</div>
+								<div className="text-sm text-muted-foreground">管理员</div>
 							</div>
 						</div>
 					</div>
-					<div className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
+					<div className="bg-card border border-border rounded-xl p-5">
 						<div className="flex items-center gap-3">
 							<div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
 								<User className="w-5 h-5 text-emerald-400" />
 							</div>
 							<div>
-								<div className="text-2xl font-bold text-white">
-									{members.filter((m) => m.role === "developer").length}
+								<div className="text-2xl font-bold text-foreground">
+									{members.filter((m) => m.role === "member").length}
 								</div>
-								<div className="text-sm text-white/50">开发者</div>
+								<div className="text-sm text-muted-foreground">普通成员</div>
 							</div>
 						</div>
 					</div>
-					<div className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
+					<div className="bg-card border border-border rounded-xl p-5">
 						<div className="flex items-center gap-3">
 							<div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
 								<Mail className="w-5 h-5 text-amber-400" />
 							</div>
 							<div>
-								<div className="text-2xl font-bold text-white">
-									{invitations.filter((i) => i.status === "pending").length}
+								<div className="text-2xl font-bold text-foreground">
+									{pendingInvitations.length}
 								</div>
-								<div className="text-sm text-white/50">待处理邀请</div>
+								<div className="text-sm text-muted-foreground">待处理邀请</div>
 							</div>
 						</div>
 					</div>
 				</div>
 
 				{/* Members Table */}
-				<div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
-					<div className="px-6 py-4 border-b border-white/10">
-						<h2 className="text-lg font-semibold text-white">团队成员</h2>
+				<div className="bg-card border border-border rounded-xl overflow-hidden">
+					<div className="px-6 py-4 border-b border-border">
+						<h2 className="text-lg font-semibold text-foreground">团队成员</h2>
 					</div>
-					<div className="overflow-x-auto">
-						<table className="w-full">
-							<thead>
-								<tr className="border-b border-white/10">
-									<th className="text-left text-xs font-semibold text-white/40 uppercase tracking-wider px-6 py-4">
-										成员
-									</th>
-									<th className="text-left text-xs font-semibold text-white/40 uppercase tracking-wider px-6 py-4">
-										角色
-									</th>
-									<th className="text-left text-xs font-semibold text-white/40 uppercase tracking-wider px-6 py-4">
-										加入时间
-									</th>
-									<th className="text-left text-xs font-semibold text-white/40 uppercase tracking-wider px-6 py-4">
-										最后活跃
-									</th>
-									<th className="text-right text-xs font-semibold text-white/40 uppercase tracking-wider px-6 py-4">
-										操作
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								{members.map((member) => (
-									<tr
-										key={member.id}
-										className="border-b border-white/5 last:border-0"
-									>
-										<td className="px-6 py-4">
-											<div className="flex items-center gap-3">
-												<div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center text-white font-semibold text-sm">
-													{member.name[0]?.toUpperCase()}
-												</div>
-												<div>
-													<div className="font-medium text-white flex items-center gap-2">
-														{member.name}
-														{member.role === "owner" && (
-															<Crown className="w-4 h-4 text-amber-400" />
-														)}
-													</div>
-													<div className="text-sm text-white/40">
-														{member.email}
-													</div>
-												</div>
-											</div>
-										</td>
-										<td className="px-6 py-4">
-											{member.role === "owner" ? (
-												<span
-													className={`px-2.5 py-1 rounded-full text-xs font-medium ${roleLabels[member.role].color}`}
-												>
-													{roleLabels[member.role].label}
-												</span>
-											) : (
-												<Select
-													value={member.role}
-													onValueChange={(value) =>
-														handleChangeRole(
-															member.id,
-															value as "admin" | "developer" | "viewer",
-														)
-													}
-												>
-													<SelectTrigger className="w-32 h-8 bg-white/5 border-white/10 text-white text-xs">
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent className="bg-[#1a1a24] border-white/10">
-														<SelectItem
-															value="admin"
-															className="text-white focus:bg-white/10"
-														>
-															管理员
-														</SelectItem>
-														<SelectItem
-															value="developer"
-															className="text-white focus:bg-white/10"
-														>
-															开发者
-														</SelectItem>
-														<SelectItem
-															value="viewer"
-															className="text-white focus:bg-white/10"
-														>
-															观察者
-														</SelectItem>
-													</SelectContent>
-												</Select>
-											)}
-										</td>
-										<td className="px-6 py-4 text-white/60">{member.joinedAt}</td>
-										<td className="px-6 py-4 text-white/60">
-											{member.lastActive}
-										</td>
-										<td className="px-6 py-4 text-right">
-											{member.role !== "owner" && (
-												<Button
-													variant="ghost"
-													size="sm"
-													className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-													onClick={() => handleRemoveMember(member.id)}
-												>
-													<Trash2 className="w-4 h-4" />
-												</Button>
-											)}
-										</td>
+					{isLoading ? (
+						<div className="flex items-center justify-center py-12">
+							<Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
+						</div>
+					) : (
+						<div className="overflow-x-auto">
+							<table className="w-full">
+								<thead>
+									<tr className="border-b border-border">
+										<th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+											成员
+										</th>
+										<th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+											角色
+										</th>
+										<th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+											加入时间
+										</th>
+										<th className="text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+											操作
+										</th>
 									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
+								</thead>
+								<tbody>
+									{members.map((member) => {
+										const name =
+											member.user.name || member.user.email || "未知用户";
+										const role = member.role as keyof typeof roleLabels;
+										return (
+											<tr
+												key={member.id}
+												className="border-b border-border/50 last:border-0"
+											>
+												<td className="px-6 py-4">
+													<div className="flex items-center gap-3">
+														{member.user.image ? (
+															<img
+																src={member.user.image}
+																alt={name}
+																className="w-9 h-9 rounded-full object-cover"
+															/>
+														) : (
+															<div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center text-white font-semibold text-sm">
+																{name[0]?.toUpperCase()}
+															</div>
+														)}
+														<div>
+															<div className="font-medium text-foreground flex items-center gap-2">
+																{name}
+																{role === "owner" && (
+																	<Crown className="w-4 h-4 text-amber-400" />
+																)}
+															</div>
+															<div className="text-sm text-muted-foreground">
+																{member.user.email}
+															</div>
+														</div>
+													</div>
+												</td>
+												<td className="px-6 py-4">
+													{role === "owner" ? (
+														<span
+															className={`px-2.5 py-1 rounded-full text-xs font-medium ${roleLabels.owner.color}`}
+														>
+															{roleLabels.owner.label}
+														</span>
+													) : (
+														<Select
+															value={member.role}
+															onValueChange={(value) =>
+																handleChangeRole(
+																	member.id,
+																	value as "admin" | "member",
+																)
+															}
+															disabled={updateRoleMutation.isPending}
+														>
+															<SelectTrigger className="w-32 h-8 bg-muted border-border text-foreground text-xs">
+																<SelectValue />
+															</SelectTrigger>
+															<SelectContent className="bg-popover border-border">
+																<SelectItem
+																	value="admin"
+																	className="text-foreground focus:bg-accent"
+																>
+																	管理员
+																</SelectItem>
+																<SelectItem
+																	value="member"
+																	className="text-foreground focus:bg-accent"
+																>
+																	成员
+																</SelectItem>
+															</SelectContent>
+														</Select>
+													)}
+												</td>
+												<td className="px-6 py-4 text-muted-foreground">
+													{formatDate(member.createdAt)}
+												</td>
+												<td className="px-6 py-4 text-right">
+													{role !== "owner" && (
+														<Button
+															variant="ghost"
+															size="sm"
+															className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+															onClick={() => handleRemoveMember(member.id)}
+															disabled={removeMutation.isPending}
+														>
+															<Trash2 className="w-4 h-4" />
+														</Button>
+													)}
+												</td>
+											</tr>
+										);
+									})}
+								</tbody>
+							</table>
+						</div>
+					)}
 				</div>
 
 				{/* Pending Invitations */}
-				{invitations.length > 0 && (
-					<div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
-						<div className="px-6 py-4 border-b border-white/10">
-							<h2 className="text-lg font-semibold text-white">待处理邀请</h2>
+				{pendingInvitations.length > 0 && (
+					<div className="bg-card border border-border rounded-xl overflow-hidden">
+						<div className="px-6 py-4 border-b border-border">
+							<h2 className="text-lg font-semibold text-foreground">
+								待处理邀请
+							</h2>
 						</div>
-						<div className="divide-y divide-white/5">
-							{invitations.map((invitation) => (
-								<div
-									key={invitation.id}
-									className="px-6 py-4 flex items-center justify-between"
-								>
-									<div className="flex items-center gap-3">
-										<div className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center">
-											<Mail className="w-4 h-4 text-white/40" />
+						<div className="divide-y divide-border/50">
+							{pendingInvitations.map((invitation) => {
+								const status = getInvitationStatus(invitation);
+								return (
+									<div
+										key={invitation.id}
+										className="px-6 py-4 flex items-center justify-between"
+									>
+										<div className="flex items-center gap-3">
+											<div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
+												<Mail className="w-4 h-4 text-muted-foreground" />
+											</div>
+											<div>
+												<div className="font-medium text-foreground">
+													{invitation.email}
+												</div>
+												<div className="text-sm text-muted-foreground">
+													邀请为{" "}
+													{roleLabels[invitation.role]?.label ??
+														invitation.role}{" "}
+													· 发送于 {formatDate(invitation.createdAt)}
+												</div>
+											</div>
 										</div>
-										<div>
-											<div className="font-medium text-white">
-												{invitation.email}
-											</div>
-											<div className="text-sm text-white/40">
-												邀请为 {roleLabels[invitation.role].label} · 发送于{" "}
-												{invitation.sentAt}
-											</div>
+										<div className="flex items-center gap-3">
+											<span
+												className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+													status === "pending"
+														? "bg-amber-500/10 text-amber-400"
+														: "bg-muted text-muted-foreground"
+												}`}
+											>
+												{status === "pending" ? "等待接受" : "已过期"}
+											</span>
+											<Button
+												variant="ghost"
+												size="sm"
+												className="text-muted-foreground hover:text-foreground hover:bg-muted"
+												onClick={() => handleCancelInvitation(invitation.id)}
+												disabled={cancelInvitationMutation.isPending}
+											>
+												取消
+											</Button>
 										</div>
 									</div>
-									<div className="flex items-center gap-3">
-										<span
-											className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-												invitation.status === "pending"
-													? "bg-amber-500/10 text-amber-400"
-													: "bg-white/5 text-white/40"
-											}`}
-										>
-											{invitation.status === "pending" ? "等待接受" : "已过期"}
-										</span>
-										<Button
-											variant="ghost"
-											size="sm"
-											className="text-white/60 hover:text-white hover:bg-white/5"
-											onClick={() => handleCancelInvitation(invitation.id)}
-										>
-											取消
-										</Button>
-									</div>
-								</div>
-							))}
+								);
+							})}
 						</div>
 					</div>
 				)}
@@ -402,65 +478,56 @@ function TeamPage() {
 				{/* Invite Modal */}
 				{showInviteModal && (
 					<div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-						<div className="bg-[#0d0d14] border border-white/10 rounded-2xl w-full max-w-md">
-							<div className="p-6 border-b border-white/10">
-								<h2 className="text-xl font-semibold text-white">邀请团队成员</h2>
+						<div className="bg-card border border-border rounded-2xl w-full max-w-md">
+							<div className="p-6 border-b border-border">
+								<h2 className="text-xl font-semibold text-foreground">
+									邀请团队成员
+								</h2>
 							</div>
 
 							<div className="p-6 space-y-4">
 								<div>
-									<Label className="text-white/70">邮箱地址</Label>
+									<Label className="text-foreground/70">邮箱地址</Label>
 									<Input
 										type="email"
 										placeholder="colleague@example.com"
 										value={inviteEmail}
 										onChange={(e) => setInviteEmail(e.target.value)}
-										className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+										className="mt-2 bg-muted border-border text-foreground placeholder:text-muted-foreground/60"
 									/>
 								</div>
 
 								<div>
-									<Label className="text-white/70">角色</Label>
+									<Label className="text-foreground/70">角色</Label>
 									<Select
 										value={inviteRole}
 										onValueChange={(value) =>
-											setInviteRole(value as "admin" | "developer" | "viewer")
+											setInviteRole(value as "admin" | "member")
 										}
 									>
-										<SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white">
+										<SelectTrigger className="mt-2 bg-muted border-border text-foreground">
 											<SelectValue />
 										</SelectTrigger>
-										<SelectContent className="bg-[#1a1a24] border-white/10">
+										<SelectContent className="bg-popover border-border">
 											<SelectItem
 												value="admin"
-												className="text-white focus:bg-white/10"
+												className="text-foreground focus:bg-accent"
 											>
 												<div>
 													<div className="font-medium">管理员</div>
-													<div className="text-xs text-white/50">
+													<div className="text-xs text-muted-foreground">
 														可以管理团队、密钥和服务配置
 													</div>
 												</div>
 											</SelectItem>
 											<SelectItem
-												value="developer"
-												className="text-white focus:bg-white/10"
+												value="member"
+												className="text-foreground focus:bg-accent"
 											>
 												<div>
-													<div className="font-medium">开发者</div>
-													<div className="text-xs text-white/50">
-														可以创建密钥和查看服务
-													</div>
-												</div>
-											</SelectItem>
-											<SelectItem
-												value="viewer"
-												className="text-white focus:bg-white/10"
-											>
-												<div>
-													<div className="font-medium">观察者</div>
-													<div className="text-xs text-white/50">
-														只能查看统计数据
+													<div className="font-medium">成员</div>
+													<div className="text-xs text-muted-foreground">
+														可以查看和使用服务
 													</div>
 												</div>
 											</SelectItem>
@@ -469,10 +536,10 @@ function TeamPage() {
 								</div>
 							</div>
 
-							<div className="p-6 border-t border-white/10 flex justify-end gap-3">
+							<div className="p-6 border-t border-border flex justify-end gap-3">
 								<Button
 									variant="ghost"
-									className="text-white/60 hover:text-white hover:bg-white/5"
+									className="text-muted-foreground hover:text-foreground hover:bg-muted"
 									onClick={() => setShowInviteModal(false)}
 								>
 									取消
@@ -480,9 +547,9 @@ function TeamPage() {
 								<Button
 									className="bg-cyan-500 hover:bg-cyan-600"
 									onClick={handleInvite}
-									disabled={!inviteEmail.trim() || isInviting}
+									disabled={!inviteEmail.trim() || inviteMutation.isPending}
 								>
-									{isInviting ? "发送中..." : "发送邀请"}
+									{inviteMutation.isPending ? "发送中..." : "发送邀请"}
 								</Button>
 							</div>
 						</div>

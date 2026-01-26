@@ -1,148 +1,157 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-	Copy,
-	Eye,
-	EyeOff,
-	Key,
-	MoreVertical,
-	Plus,
-	Trash2,
-} from "lucide-react";
-import { useState } from "react";
+import { Copy, Eye, EyeOff, Key, Loader2, Plus, Trash2 } from "lucide-react";
+import { useCallback, useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useSession, apiKey } from "@/lib/auth-client";
+import { apiKey, useSession } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/dashboard/api-keys")({
 	component: ApiKeysPage,
 });
 
-interface ApiKeyItem {
-	id: string;
-	name: string;
-	keyPreview: string;
-	createdAt: string;
-	lastUsed: string;
-	status: "active" | "expired" | "revoked";
-	requestCount: number;
+type ApiKeyStatus = "active" | "expired" | "revoked";
+
+function getKeyStatus(key: {
+	enabled: boolean;
+	expiresAt: Date | null;
+}): ApiKeyStatus {
+	if (!key.enabled) return "revoked";
+	if (key.expiresAt && new Date(key.expiresAt) < new Date()) return "expired";
+	return "active";
+}
+
+function formatDate(date: Date | string) {
+	return new Date(date).toLocaleDateString("zh-CN", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+	});
+}
+
+function formatLastUsed(date: Date | string | null) {
+	if (!date) return "从未使用";
+	const now = Date.now();
+	const diff = now - new Date(date).getTime();
+	const minutes = Math.floor(diff / 60000);
+	if (minutes < 1) return "刚刚";
+	if (minutes < 60) return `${minutes} 分钟前`;
+	const hours = Math.floor(minutes / 60);
+	if (hours < 24) return `${hours} 小时前`;
+	const days = Math.floor(hours / 24);
+	return `${days} 天前`;
 }
 
 function ApiKeysPage() {
 	const { data: session } = useSession();
+	const queryClient = useQueryClient();
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [newKeyName, setNewKeyName] = useState("");
 	const [createdKey, setCreatedKey] = useState<string | null>(null);
 	const [showKey, setShowKey] = useState(false);
-	const [isCreating, setIsCreating] = useState(false);
 
-	// Mock data - 实际应从 API 获取
-	const [keys, setKeys] = useState<ApiKeyItem[]>([
-		{
-			id: "1",
-			name: "生产环境 - 小智音箱",
-			keyPreview: "mcp_prod_****abcd",
-			createdAt: "2025-01-20",
-			lastUsed: "2 分钟前",
-			status: "active",
-			requestCount: 5234,
+	// 获取 API 密钥列表
+	const {
+		data: keys,
+		isLoading,
+		error,
+	} = useQuery({
+		queryKey: ["api-keys"],
+		queryFn: async () => {
+			const result = await apiKey.list();
+			if (result.error) throw new Error(result.error.message);
+			return result.data ?? [];
 		},
-		{
-			id: "2",
-			name: "开发环境",
-			keyPreview: "mcp_dev_****efgh",
-			createdAt: "2025-01-15",
-			lastUsed: "1 小时前",
-			status: "active",
-			requestCount: 1256,
-		},
-		{
-			id: "3",
-			name: "测试设备",
-			keyPreview: "mcp_test_****ijkl",
-			createdAt: "2025-01-10",
-			lastUsed: "3 天前",
-			status: "active",
-			requestCount: 89,
-		},
-	]);
+		enabled: !!session?.user,
+	});
 
-	const handleCreateKey = async () => {
-		if (!newKeyName.trim()) return;
-
-		setIsCreating(true);
-		try {
-			// 使用 Better Auth API Key 创建
+	// 创建密钥
+	const createMutation = useMutation({
+		mutationKey: ["api-keys", "create"],
+		mutationFn: async (name: string) => {
 			const result = await apiKey.create({
-				name: newKeyName,
+				name,
 				expiresIn: 60 * 60 * 24 * 365, // 1 year
 			});
+			if (result.error) throw new Error(result.error.message);
+			return result.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+		},
+	});
 
-			if (result.data?.key) {
-				setCreatedKey(result.data.key);
-				// 添加到列表
-				setKeys((prev) => [
-					{
-						id: result.data?.id || Date.now().toString(),
-						name: newKeyName,
-						keyPreview: `mcp_****${result.data?.key?.slice(-4) || "xxxx"}`,
-						createdAt: new Date().toISOString().split("T")[0],
-						lastUsed: "从未使用",
-						status: "active",
-						requestCount: 0,
-					},
-					...prev,
-				]);
+	// 撤销密钥（禁用）
+	const revokeMutation = useMutation({
+		mutationKey: ["api-keys", "revoke"],
+		mutationFn: async (keyId: string) => {
+			const result = await apiKey.update({
+				keyId,
+				enabled: false,
+			});
+			if (result.error) throw new Error(result.error.message);
+			return result.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+		},
+	});
+
+	// 删除密钥
+	const deleteMutation = useMutation({
+		mutationKey: ["api-keys", "delete"],
+		mutationFn: async (keyId: string) => {
+			const result = await apiKey.delete({
+				keyId,
+			});
+			if (result.error) throw new Error(result.error.message);
+			return result.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+		},
+	});
+
+	const handleCreateKey = useCallback(async () => {
+		if (!newKeyName.trim()) return;
+		try {
+			const data = await createMutation.mutateAsync(newKeyName);
+			if (data?.key) {
+				setCreatedKey(data.key);
 			}
-		} catch (error) {
-			console.error("Failed to create API key:", error);
-			// 模拟创建成功
-			const mockKey = `mcp_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-			setCreatedKey(mockKey);
-			setKeys((prev) => [
-				{
-					id: Date.now().toString(),
-					name: newKeyName,
-					keyPreview: `mcp_****${mockKey.slice(-4)}`,
-					createdAt: new Date().toISOString().split("T")[0],
-					lastUsed: "从未使用",
-					status: "active",
-					requestCount: 0,
-				},
-				...prev,
-			]);
-		} finally {
-			setIsCreating(false);
+		} catch (err) {
+			console.error("Failed to create API key:", err);
 		}
-	};
+	}, [newKeyName, createMutation]);
 
-	const handleCopyKey = () => {
+	const handleCopyKey = useCallback(() => {
 		if (createdKey) {
 			navigator.clipboard.writeText(createdKey);
 		}
-	};
+	}, [createdKey]);
 
-	const handleRevokeKey = async (id: string) => {
-		// TODO: 调用 API 撤销密钥
-		setKeys((prev) =>
-			prev.map((key) =>
-				key.id === id ? { ...key, status: "revoked" as const } : key,
-			),
-		);
-	};
+	const handleRevokeKey = useCallback(
+		(id: string) => {
+			revokeMutation.mutate(id);
+		},
+		[revokeMutation],
+	);
 
-	const handleDeleteKey = async (id: string) => {
-		// TODO: 调用 API 删除密钥
-		setKeys((prev) => prev.filter((key) => key.id !== id));
-	};
+	const handleDeleteKey = useCallback(
+		(id: string) => {
+			deleteMutation.mutate(id);
+		},
+		[deleteMutation],
+	);
 
-	const closeModal = () => {
+	const closeModal = useCallback(() => {
 		setShowCreateModal(false);
 		setNewKeyName("");
 		setCreatedKey(null);
 		setShowKey(false);
-	};
+	}, []);
 
 	return (
 		<DashboardLayout>
@@ -150,8 +159,8 @@ function ApiKeysPage() {
 				{/* Header */}
 				<div className="flex items-center justify-between">
 					<div>
-						<h1 className="text-2xl font-bold text-white">API 密钥管理</h1>
-						<p className="text-white/50 mt-1">
+						<h1 className="text-2xl font-bold text-foreground">API 密钥管理</h1>
+						<p className="text-muted-foreground mt-1">
 							创建和管理用于访问 MCP 服务的 API 密钥
 						</p>
 					</div>
@@ -167,12 +176,12 @@ function ApiKeysPage() {
 				{/* Info Banner */}
 				<div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-4">
 					<div className="flex gap-3">
-						<Key className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+						<Key className="w-5 h-5 text-cyan-600 shrink-0 mt-0.5" />
 						<div>
-							<div className="text-sm font-medium text-cyan-400">
+							<div className="text-sm font-medium text-cyan-600">
 								API 密钥安全提示
 							</div>
-							<div className="text-sm text-white/60 mt-1">
+							<div className="text-sm text-muted-foreground mt-1">
 								密钥只会在创建时显示一次，请妥善保管。建议为不同设备或环境创建独立的密钥，便于追踪和管理。
 							</div>
 						</div>
@@ -180,124 +189,126 @@ function ApiKeysPage() {
 				</div>
 
 				{/* Keys Table */}
-				<div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
-					<div className="overflow-x-auto">
-						<table className="w-full">
-							<thead>
-								<tr className="border-b border-white/10">
-									<th className="text-left text-xs font-semibold text-white/40 uppercase tracking-wider px-6 py-4">
-										名称
-									</th>
-									<th className="text-left text-xs font-semibold text-white/40 uppercase tracking-wider px-6 py-4">
-										密钥
-									</th>
-									<th className="text-left text-xs font-semibold text-white/40 uppercase tracking-wider px-6 py-4">
-										状态
-									</th>
-									<th className="text-left text-xs font-semibold text-white/40 uppercase tracking-wider px-6 py-4">
-										调用次数
-									</th>
-									<th className="text-left text-xs font-semibold text-white/40 uppercase tracking-wider px-6 py-4">
-										最后使用
-									</th>
-									<th className="text-left text-xs font-semibold text-white/40 uppercase tracking-wider px-6 py-4">
-										创建时间
-									</th>
-									<th className="text-right text-xs font-semibold text-white/40 uppercase tracking-wider px-6 py-4">
-										操作
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								{keys.map((key) => (
-									<tr
-										key={key.id}
-										className="border-b border-white/5 last:border-0"
-									>
-										<td className="px-6 py-4">
-											<div className="font-medium text-white">{key.name}</div>
-										</td>
-										<td className="px-6 py-4">
-											<code className="text-sm text-white/60 bg-white/5 px-2 py-1 rounded">
-												{key.keyPreview}
-											</code>
-										</td>
-										<td className="px-6 py-4">
-											<span
-												className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-													key.status === "active"
-														? "bg-emerald-500/10 text-emerald-400"
-														: key.status === "expired"
-															? "bg-amber-500/10 text-amber-400"
-															: "bg-red-500/10 text-red-400"
-												}`}
-											>
-												<span
-													className={`w-1.5 h-1.5 rounded-full ${
-														key.status === "active"
-															? "bg-emerald-400"
-															: key.status === "expired"
-																? "bg-amber-400"
-																: "bg-red-400"
-													}`}
-												/>
-												{key.status === "active"
-													? "活跃"
-													: key.status === "expired"
-														? "已过期"
-														: "已撤销"}
-											</span>
-										</td>
-										<td className="px-6 py-4 text-white/60">
-											{key.requestCount.toLocaleString()}
-										</td>
-										<td className="px-6 py-4 text-white/60">{key.lastUsed}</td>
-										<td className="px-6 py-4 text-white/60">{key.createdAt}</td>
-										<td className="px-6 py-4 text-right">
-											<div className="flex items-center justify-end gap-2">
-												{key.status === "active" && (
-													<Button
-														variant="ghost"
-														size="sm"
-														className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
-														onClick={() => handleRevokeKey(key.id)}
-													>
-														撤销
-													</Button>
-												)}
-												<Button
-													variant="ghost"
-													size="sm"
-													className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-													onClick={() => handleDeleteKey(key.id)}
-												>
-													<Trash2 className="w-4 h-4" />
-												</Button>
-											</div>
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-
-					{keys.length === 0 && (
+				<div className="bg-card border border-border rounded-xl overflow-hidden">
+					{isLoading ? (
+						<div className="flex items-center justify-center py-12">
+							<Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
+						</div>
+					) : error ? (
 						<div className="text-center py-12">
-							<Key className="w-12 h-12 text-white/20 mx-auto mb-4" />
-							<div className="text-white/60">暂无 API 密钥</div>
-							<div className="text-white/40 text-sm mt-1">
-								创建第一个密钥以开始使用 MCP 服务
+							<div className="text-red-400 text-sm">
+								加载失败：{error.message}
 							</div>
 						</div>
+					) : (
+						<>
+							<div className="overflow-x-auto">
+								<table className="w-full">
+									<thead>
+										<tr className="border-b border-border">
+											<th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+												名称
+											</th>
+											<th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+												密钥
+											</th>
+											<th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+												状态
+											</th>
+											<th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+												调用次数
+											</th>
+											<th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+												最后使用
+											</th>
+											<th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+												创建时间
+											</th>
+											<th className="text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+												操作
+											</th>
+										</tr>
+									</thead>
+									<tbody>
+										{keys?.map((item) => {
+											const status = getKeyStatus(item);
+											return (
+												<tr
+													key={item.id}
+													className="border-b border-border/50 last:border-0"
+												>
+													<td className="px-6 py-4">
+														<div className="font-medium text-foreground">
+															{item.name || "未命名密钥"}
+														</div>
+													</td>
+													<td className="px-6 py-4">
+														<code className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded">
+															{item.start || `${item.prefix ?? "mcp_"}****`}
+														</code>
+													</td>
+													<td className="px-6 py-4">
+														<KeyStatusBadge status={status} />
+													</td>
+													<td className="px-6 py-4 text-muted-foreground">
+														{item.requestCount.toLocaleString()}
+													</td>
+													<td className="px-6 py-4 text-muted-foreground">
+														{formatLastUsed(item.lastRequest)}
+													</td>
+													<td className="px-6 py-4 text-muted-foreground">
+														{formatDate(item.createdAt)}
+													</td>
+													<td className="px-6 py-4 text-right">
+														<div className="flex items-center justify-end gap-2">
+															{status === "active" && (
+																<Button
+																	variant="ghost"
+																	size="sm"
+																	className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+																	onClick={() => handleRevokeKey(item.id)}
+																	disabled={revokeMutation.isPending}
+																>
+																	撤销
+																</Button>
+															)}
+															<Button
+																variant="ghost"
+																size="sm"
+																className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+																onClick={() => handleDeleteKey(item.id)}
+																disabled={deleteMutation.isPending}
+															>
+																<Trash2 className="w-4 h-4" />
+															</Button>
+														</div>
+													</td>
+												</tr>
+											);
+										})}
+									</tbody>
+								</table>
+							</div>
+
+							{(!keys || keys.length === 0) && (
+								<div className="text-center py-12">
+									<Key className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+									<div className="text-muted-foreground">暂无 API 密钥</div>
+									<div className="text-muted-foreground text-sm mt-1">
+										创建第一个密钥以开始使用 MCP 服务
+									</div>
+								</div>
+							)}
+						</>
 					)}
 				</div>
 
 				{/* Create Modal */}
 				{showCreateModal && (
 					<div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-						<div className="bg-[#0d0d14] border border-white/10 rounded-2xl w-full max-w-md">
-							<div className="p-6 border-b border-white/10">
-								<h2 className="text-xl font-semibold text-white">
+						<div className="bg-card border border-border rounded-2xl w-full max-w-md">
+							<div className="p-6 border-b border-border">
+								<h2 className="text-xl font-semibold text-foreground">
 									{createdKey ? "密钥已创建" : "创建新密钥"}
 								</h2>
 							</div>
@@ -306,14 +317,14 @@ function ApiKeysPage() {
 								{!createdKey ? (
 									<div className="space-y-4">
 										<div>
-											<Label className="text-white/70">密钥名称</Label>
+											<Label className="text-foreground/70">密钥名称</Label>
 											<Input
 												placeholder="例如：生产环境 - 小智音箱"
 												value={newKeyName}
 												onChange={(e) => setNewKeyName(e.target.value)}
-												className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+												className="mt-2 bg-muted border-border text-foreground placeholder:text-muted-foreground/60"
 											/>
-											<p className="text-xs text-white/40 mt-2">
+											<p className="text-xs text-muted-foreground mt-2">
 												建议使用有意义的名称，便于后续管理和追踪
 											</p>
 										</div>
@@ -324,21 +335,21 @@ function ApiKeysPage() {
 											<div className="text-sm text-emerald-400 font-medium mb-2">
 												请保存您的密钥
 											</div>
-											<div className="text-xs text-white/60">
+											<div className="text-xs text-muted-foreground">
 												这是密钥唯一一次显示的机会，请妥善保管。
 											</div>
 										</div>
 
 										<div>
-											<Label className="text-white/70">API 密钥</Label>
+											<Label className="text-foreground/70">API 密钥</Label>
 											<div className="mt-2 flex items-center gap-2">
-												<code className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white font-mono break-all">
+												<code className="flex-1 bg-muted border border-border rounded-lg px-4 py-3 text-sm text-foreground font-mono break-all">
 													{showKey ? createdKey : "•".repeat(40)}
 												</code>
 												<Button
 													variant="ghost"
 													size="icon"
-													className="text-white/60 hover:text-white"
+													className="text-muted-foreground hover:text-foreground"
 													onClick={() => setShowKey(!showKey)}
 												>
 													{showKey ? (
@@ -350,7 +361,7 @@ function ApiKeysPage() {
 												<Button
 													variant="ghost"
 													size="icon"
-													className="text-white/60 hover:text-white"
+													className="text-muted-foreground hover:text-foreground"
 													onClick={handleCopyKey}
 												>
 													<Copy className="w-4 h-4" />
@@ -361,10 +372,10 @@ function ApiKeysPage() {
 								)}
 							</div>
 
-							<div className="p-6 border-t border-white/10 flex justify-end gap-3">
+							<div className="p-6 border-t border-border flex justify-end gap-3">
 								<Button
 									variant="ghost"
-									className="text-white/60 hover:text-white hover:bg-white/5"
+									className="text-muted-foreground hover:text-foreground hover:bg-muted"
 									onClick={closeModal}
 								>
 									{createdKey ? "完成" : "取消"}
@@ -373,9 +384,9 @@ function ApiKeysPage() {
 									<Button
 										className="bg-cyan-500 hover:bg-cyan-600"
 										onClick={handleCreateKey}
-										disabled={!newKeyName.trim() || isCreating}
+										disabled={!newKeyName.trim() || createMutation.isPending}
 									>
-										{isCreating ? "创建中..." : "创建密钥"}
+										{createMutation.isPending ? "创建中..." : "创建密钥"}
 									</Button>
 								)}
 							</div>
@@ -384,5 +395,34 @@ function ApiKeysPage() {
 				)}
 			</div>
 		</DashboardLayout>
+	);
+}
+
+function KeyStatusBadge({ status }: { status: ApiKeyStatus }) {
+	const config = {
+		active: {
+			bg: "bg-emerald-500/10 text-emerald-400",
+			dot: "bg-emerald-400",
+			label: "活跃",
+		},
+		expired: {
+			bg: "bg-amber-500/10 text-amber-400",
+			dot: "bg-amber-400",
+			label: "已过期",
+		},
+		revoked: {
+			bg: "bg-red-500/10 text-red-400",
+			dot: "bg-red-400",
+			label: "已撤销",
+		},
+	}[status];
+
+	return (
+		<span
+			className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.bg}`}
+		>
+			<span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
+			{config.label}
+		</span>
 	);
 }

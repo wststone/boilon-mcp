@@ -6,6 +6,7 @@ import {
 	Database,
 	ExternalLink,
 	Music,
+	Newspaper,
 	Settings,
 } from "lucide-react";
 import { useState } from "react";
@@ -99,6 +100,27 @@ function ServicesPage() {
 				errorRate: 0.3,
 			},
 		},
+		{
+			id: "news",
+			name: "新闻资讯",
+			description:
+				"基于博查AI的智能新闻搜索服务。支持关键词搜索、分类浏览、头条和热门趋势。",
+			icon: Newspaper,
+			gradient: "from-orange-500 to-amber-500",
+			endpoint: "/mcp/news",
+			enabled: true,
+			tools: [
+				"search_news",
+				"get_news_by_topic",
+				"get_headlines",
+				"get_trending",
+			],
+			stats: {
+				calls: 0,
+				avgLatency: 0,
+				errorRate: 0,
+			},
+		},
 	]);
 
 	const toggleService = (id: string) => {
@@ -131,8 +153,8 @@ function ServicesPage() {
 			<div className="space-y-8">
 				{/* Header */}
 				<div>
-					<h1 className="text-2xl font-bold text-white">服务管理</h1>
-					<p className="text-white/50 mt-1">配置和监控 MCP 服务</p>
+					<h1 className="text-2xl font-bold text-foreground">服务管理</h1>
+					<p className="text-muted-foreground mt-1">配置和监控 MCP 服务</p>
 				</div>
 
 				{/* Services Grid */}
@@ -140,7 +162,7 @@ function ServicesPage() {
 					{services.map((service) => (
 						<div
 							key={service.id}
-							className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden"
+							className="bg-card border border-border rounded-xl overflow-hidden"
 						>
 							<div className="p-6">
 								<div className="flex items-start justify-between">
@@ -152,27 +174,27 @@ function ServicesPage() {
 										</div>
 										<div>
 											<div className="flex items-center gap-3">
-												<h3 className="text-lg font-semibold text-white">
+												<h3 className="text-lg font-semibold text-foreground">
 													{service.name}
 												</h3>
 												<span
 													className={`px-2 py-0.5 rounded-full text-xs font-medium ${
 														service.enabled
 															? "bg-emerald-500/10 text-emerald-400"
-															: "bg-white/5 text-white/40"
+															: "bg-muted text-muted-foreground"
 													}`}
 												>
 													{service.enabled ? "已启用" : "已禁用"}
 												</span>
 											</div>
-											<p className="text-white/50 text-sm mt-1 max-w-xl">
+											<p className="text-muted-foreground text-sm mt-1 max-w-xl">
 												{service.description}
 											</p>
 										</div>
 									</div>
 									<div className="flex items-center gap-4">
 										<div className="text-right">
-											<div className="text-sm text-white/40">启用服务</div>
+											<div className="text-sm text-muted-foreground">启用服务</div>
 										</div>
 										<Switch
 											checked={service.enabled}
@@ -182,32 +204,32 @@ function ServicesPage() {
 								</div>
 
 								{/* Stats */}
-								<div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/10">
+								<div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-border">
 									<div>
-										<div className="text-2xl font-bold text-white">
+										<div className="text-2xl font-bold text-foreground">
 											{service.stats.calls.toLocaleString()}
 										</div>
-										<div className="text-sm text-white/40">本月调用</div>
+										<div className="text-sm text-muted-foreground">本月调用</div>
 									</div>
 									<div>
-										<div className="text-2xl font-bold text-white">
+										<div className="text-2xl font-bold text-foreground">
 											{service.stats.avgLatency}ms
 										</div>
-										<div className="text-sm text-white/40">平均延迟</div>
+										<div className="text-sm text-muted-foreground">平均延迟</div>
 									</div>
 									<div>
-										<div className="text-2xl font-bold text-white">
+										<div className="text-2xl font-bold text-foreground">
 											{service.stats.errorRate}%
 										</div>
-										<div className="text-sm text-white/40">错误率</div>
+										<div className="text-sm text-muted-foreground">错误率</div>
 									</div>
 								</div>
 
 								{/* Endpoint */}
-								<div className="mt-6 pt-6 border-t border-white/10">
-									<div className="text-sm text-white/40 mb-2">服务端点</div>
+								<div className="mt-6 pt-6 border-t border-border">
+									<div className="text-sm text-muted-foreground mb-2">服务端点</div>
 									<div className="flex items-center gap-2">
-										<code className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-cyan-400 font-mono">
+										<code className="flex-1 bg-muted border border-border rounded-lg px-4 py-2 text-sm text-cyan-600 font-mono">
 											{typeof window !== "undefined"
 												? window.location.origin
 												: "https://your-domain.com"}
@@ -216,7 +238,7 @@ function ServicesPage() {
 										<Button
 											variant="ghost"
 											size="icon"
-											className="text-white/60 hover:text-white"
+											className="text-muted-foreground hover:text-foreground"
 											onClick={() => copyEndpoint(service.endpoint)}
 										>
 											<Copy className="w-4 h-4" />
@@ -225,13 +247,13 @@ function ServicesPage() {
 								</div>
 
 								{/* Tools */}
-								<div className="mt-6 pt-6 border-t border-white/10">
-									<div className="text-sm text-white/40 mb-3">可用工具</div>
+								<div className="mt-6 pt-6 border-t border-border">
+									<div className="text-sm text-muted-foreground mb-3">可用工具</div>
 									<div className="flex flex-wrap gap-2">
 										{service.tools.map((tool) => (
 											<span
 												key={tool}
-												className="px-3 py-1.5 rounded-lg text-xs font-mono bg-white/5 text-white/60 border border-white/10"
+												className="px-3 py-1.5 rounded-lg text-xs font-mono bg-muted text-muted-foreground border border-border"
 											>
 												{tool}
 											</span>
@@ -244,34 +266,34 @@ function ServicesPage() {
 				</div>
 
 				{/* Connection Guide */}
-				<div className="bg-white/[0.02] border border-white/10 rounded-xl p-6">
+				<div className="bg-card border border-border rounded-xl p-6">
 					<div className="flex items-center justify-between mb-4">
-						<h2 className="text-lg font-semibold text-white">接入指南</h2>
+						<h2 className="text-lg font-semibold text-foreground">接入指南</h2>
 						<a
 							href="https://modelcontextprotocol.io"
 							target="_blank"
 							rel="noopener noreferrer"
-							className="text-cyan-400 hover:text-cyan-300 text-sm flex items-center gap-1"
+							className="text-cyan-600 hover:text-cyan-500 text-sm flex items-center gap-1"
 						>
 							MCP 文档
 							<ExternalLink className="w-3 h-3" />
 						</a>
 					</div>
 
-					<p className="text-white/50 text-sm mb-4">
+					<p className="text-muted-foreground text-sm mb-4">
 						将以下配置添加到 Claude Desktop 或您的设备固件中，即可接入 MCP
 						服务。
 					</p>
 
-					<div className="rounded-xl border border-white/10 bg-[#0d0d14] overflow-hidden">
-						<div className="flex items-center justify-between px-4 py-2 border-b border-white/10 bg-white/[0.02]">
-							<span className="text-xs text-white/40 font-mono">
+					<div className="rounded-xl border border-border bg-card overflow-hidden">
+						<div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card">
+							<span className="text-xs text-muted-foreground font-mono">
 								mcp_config.json
 							</span>
 							<Button
 								variant="ghost"
 								size="sm"
-								className="text-white/60 hover:text-white h-7"
+								className="text-muted-foreground hover:text-foreground h-7"
 								onClick={() => navigator.clipboard.writeText(configExample)}
 							>
 								<Copy className="w-3 h-3 mr-1" />
@@ -279,19 +301,19 @@ function ServicesPage() {
 							</Button>
 						</div>
 						<pre className="p-4 overflow-x-auto">
-							<code className="text-sm font-mono text-white/70">
+							<code className="text-sm font-mono text-foreground/70">
 								{configExample}
 							</code>
 						</pre>
 					</div>
 
-					<div className="mt-4 flex items-center gap-2 text-sm text-white/40">
+					<div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
 						<Settings className="w-4 h-4" />
 						<span>
 							需要 API 密钥？前往{" "}
 							<Link
 								to="/dashboard/api-keys"
-								className="text-cyan-400 hover:text-cyan-300"
+								className="text-cyan-600 hover:text-cyan-500"
 							>
 								API 密钥管理
 							</Link>{" "}

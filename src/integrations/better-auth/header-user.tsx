@@ -1,13 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
 
-export default function BetterAuthHeader() {
+export function BetterAuthHeader() {
 	const { data: session, isPending } = authClient.useSession();
 
 	if (isPending) {
-		return (
-			<div className="h-9 w-full bg-white/5 animate-pulse rounded-lg" />
-		);
+		return <div className="h-9 w-full bg-muted animate-pulse rounded-lg" />;
 	}
 
 	if (session?.user) {
@@ -19,16 +17,16 @@ export default function BetterAuthHeader() {
 						"U"}
 				</div>
 				<div className="flex-1 min-w-0">
-					<div className="text-sm font-medium text-white truncate">
+					<div className="text-sm font-medium text-foreground truncate">
 						{session.user.name || "用户"}
 					</div>
-					<div className="text-xs text-white/40 truncate">
+					<div className="text-xs text-muted-foreground truncate">
 						{session.user.email}
 					</div>
 				</div>
 				<button
 					onClick={() => authClient.signOut()}
-					className="text-xs text-white/50 hover:text-white transition-colors"
+					className="text-xs text-muted-foreground hover:text-foreground transition-colors"
 				>
 					退出
 				</button>

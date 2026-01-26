@@ -1,0 +1,24 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { createMcpHandler } from "@/mcp/handler";
+import { createNewsServer } from "@/mcp/services/news";
+
+const handler = createMcpHandler("news", createNewsServer);
+
+export const Route = createFileRoute("/mcp/news/message")({
+	server: {
+		handlers: {
+			POST: ({ request }) => handler.handlePost(request),
+			OPTIONS: () =>
+				new Response(null, {
+					status: 204,
+					headers: {
+						"Access-Control-Allow-Origin": "*",
+						"Access-Control-Allow-Methods": "POST, OPTIONS",
+						"Access-Control-Allow-Headers":
+							"Content-Type, Authorization, X-API-Key, X-Session-Id",
+						"Access-Control-Max-Age": "86400",
+					},
+				}),
+		},
+	},
+});

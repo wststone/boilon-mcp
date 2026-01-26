@@ -92,7 +92,7 @@ function LandingPage() {
 	];
 
 	return (
-		<div className="min-h-screen bg-[#0a0a0f] text-white overflow-hidden">
+		<div className="min-h-screen bg-background text-foreground overflow-hidden">
 			{/* Animated background grid */}
 			<div className="fixed inset-0 pointer-events-none">
 				<div
@@ -114,7 +114,7 @@ function LandingPage() {
 				<div className="max-w-6xl mx-auto">
 					{/* Badge */}
 					<div className="flex justify-center mb-8">
-						<div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/30 bg-cyan-500/5 text-cyan-400 text-sm font-medium tracking-wide">
+						<div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/30 bg-cyan-500/5 text-cyan-600 text-sm font-medium tracking-wide">
 							<Zap className="w-4 h-4" />
 							<span>为智能硬件打造的 MCP 服务平台</span>
 						</div>
@@ -125,14 +125,14 @@ function LandingPage() {
 						className="text-center text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6"
 						style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
 					>
-						<span className="block text-white/90">让硬件拥有</span>
-						<span className="block bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+						<span className="block text-foreground">让硬件拥有</span>
+						<span className="block bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
 							AI 超能力
 						</span>
 					</h1>
 
 					{/* Subheadline */}
-					<p className="text-center text-xl md:text-2xl text-white/50 max-w-3xl mx-auto mb-12 leading-relaxed font-light">
+					<p className="text-center text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed font-light">
 						一站式 MCP 服务托管平台，为小智AI等智能硬件提供开箱即用的 AI
 						能力接入。认证、限流、监控，全部内置。
 					</p>
@@ -142,7 +142,7 @@ function LandingPage() {
 						<Link to="/dashboard">
 							<Button
 								size="lg"
-								className="h-14 px-8 text-lg font-semibold bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 border-0 shadow-lg shadow-cyan-500/25 transition-all hover:shadow-cyan-500/40 hover:scale-105"
+								className="h-14 px-8 text-lg font-semibold bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white border-0 shadow-lg shadow-cyan-500/25 transition-all hover:shadow-cyan-500/40 hover:scale-105"
 							>
 								立即开始
 								<ArrowRight className="w-5 h-5 ml-2" />
@@ -156,7 +156,7 @@ function LandingPage() {
 							<Button
 								size="lg"
 								variant="outline"
-								className="h-14 px-8 text-lg font-semibold border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/30 text-white"
+								className="h-14 px-8 text-lg font-semibold border-border text-foreground hover:bg-accent"
 							>
 								了解 MCP 协议
 							</Button>
@@ -171,10 +171,10 @@ function LandingPage() {
 							{ value: "<50ms", label: "平均延迟" },
 						].map((stat, i) => (
 							<div key={i} className="text-center">
-								<div className="text-3xl md:text-4xl font-black text-white mb-1">
+								<div className="text-3xl md:text-4xl font-black text-foreground mb-1">
 									{stat.value}
 								</div>
-								<div className="text-sm text-white/40 uppercase tracking-wider">
+								<div className="text-sm text-muted-foreground uppercase tracking-wider">
 									{stat.label}
 								</div>
 							</div>
@@ -184,19 +184,19 @@ function LandingPage() {
 			</section>
 
 			{/* Hardware Features Section */}
-			<section className="relative py-16 px-6 border-y border-white/5">
+			<section className="relative py-16 px-6 border-y border-border/50">
 				<div className="max-w-6xl mx-auto">
 					<div className="grid md:grid-cols-3 gap-8">
 						{hardwareFeatures.map((feature, i) => (
 							<div key={i} className="flex items-center gap-4">
 								<div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
-									<feature.icon className="w-6 h-6 text-cyan-400" />
+									<feature.icon className="w-6 h-6 text-cyan-600" />
 								</div>
 								<div>
-									<h3 className="text-lg font-bold text-white mb-1">
+									<h3 className="text-lg font-bold text-foreground mb-1">
 										{feature.title}
 									</h3>
-									<p className="text-sm text-white/50">{feature.description}</p>
+									<p className="text-sm text-muted-foreground">{feature.description}</p>
 								</div>
 							</div>
 						))}
@@ -210,10 +210,10 @@ function LandingPage() {
 					{/* Section header */}
 					<div className="text-center mb-16">
 						<h2 className="text-4xl md:text-5xl font-black tracking-tight mb-4">
-							<span className="text-white/90">开箱即用的</span>{" "}
-							<span className="text-cyan-400">MCP 服务</span>
+							<span className="text-foreground">开箱即用的</span>{" "}
+							<span className="text-cyan-600">MCP 服务</span>
 						</h2>
-						<p className="text-lg text-white/50 max-w-2xl mx-auto">
+						<p className="text-lg text-muted-foreground max-w-2xl mx-auto">
 							预置三大核心服务，支持 SSE
 							传输协议。无需后端开发，设备固件直连即可使用。
 						</p>
@@ -224,7 +224,7 @@ function LandingPage() {
 						{services.map((service, i) => (
 							<div
 								key={i}
-								className="group relative rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden transition-all duration-500 hover:border-white/20 hover:bg-white/[0.04]"
+								className="group relative rounded-2xl border border-border bg-card backdrop-blur-sm overflow-hidden transition-all duration-500 hover:border-border hover:bg-accent"
 							>
 								{/* Glow effect */}
 								<div
@@ -241,25 +241,25 @@ function LandingPage() {
 									</div>
 
 									{/* Title */}
-									<h3 className="text-2xl font-bold text-white mb-3">
+									<h3 className="text-2xl font-bold text-foreground mb-3">
 										{service.name}
 									</h3>
 
 									{/* Description */}
-									<p className="text-white/50 leading-relaxed mb-6">
+									<p className="text-muted-foreground leading-relaxed mb-6">
 										{service.description}
 									</p>
 
 									{/* Tools */}
 									<div className="space-y-2">
-										<div className="text-xs text-white/30 uppercase tracking-wider mb-2">
+										<div className="text-xs text-muted-foreground/60 uppercase tracking-wider mb-2">
 											可用工具
 										</div>
 										<div className="flex flex-wrap gap-2">
 											{service.tools.map((tool, j) => (
 												<span
 													key={j}
-													className="px-3 py-1 rounded-full text-xs font-mono bg-white/5 text-white/60 border border-white/10"
+													className="px-3 py-1 rounded-full text-xs font-mono bg-muted text-muted-foreground border border-border"
 												>
 													{tool}
 												</span>
@@ -281,16 +281,16 @@ function LandingPage() {
 				<div className="max-w-6xl mx-auto">
 					{/* Section header */}
 					<div className="text-center mb-16">
-						<div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-indigo-500/30 bg-indigo-500/5 text-indigo-400 text-sm font-medium tracking-wide mb-6">
+						<div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-indigo-500/30 bg-indigo-500/5 text-indigo-600 text-sm font-medium tracking-wide mb-6">
 							<Shield className="w-4 h-4" />
 							<span>企业级能力</span>
 						</div>
 						<h2 className="text-4xl md:text-5xl font-black tracking-tight mb-4">
-							<span className="text-white/90">专为</span>{" "}
-							<span className="text-indigo-400">量产场景</span>{" "}
-							<span className="text-white/90">设计</span>
+							<span className="text-foreground">专为</span>{" "}
+							<span className="text-indigo-600">量产场景</span>{" "}
+							<span className="text-foreground">设计</span>
 						</h2>
-						<p className="text-lg text-white/50 max-w-2xl mx-auto">
+						<p className="text-lg text-muted-foreground max-w-2xl mx-auto">
 							从原型验证到百万级设备部署，提供完整的安全、监控和管理能力。
 						</p>
 					</div>
@@ -300,18 +300,18 @@ function LandingPage() {
 						{features.map((feature, i) => (
 							<div
 								key={i}
-								className="group flex gap-5 p-6 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20 transition-all duration-300"
+								className="group flex gap-5 p-6 rounded-xl border border-border bg-card hover:bg-accent hover:border-border transition-all duration-300"
 							>
 								<div className="flex-shrink-0">
 									<div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center">
-										<feature.icon className="w-6 h-6 text-indigo-400" />
+										<feature.icon className="w-6 h-6 text-indigo-600" />
 									</div>
 								</div>
 								<div>
-									<h3 className="text-xl font-bold text-white mb-2">
+									<h3 className="text-xl font-bold text-foreground mb-2">
 										{feature.title}
 									</h3>
-									<p className="text-white/50 leading-relaxed">
+									<p className="text-muted-foreground leading-relaxed">
 										{feature.description}
 									</p>
 								</div>
@@ -326,68 +326,68 @@ function LandingPage() {
 				<div className="max-w-4xl mx-auto">
 					<div className="text-center mb-12">
 						<h2 className="text-3xl md:text-4xl font-black tracking-tight mb-4">
-							<span className="text-white/90">快速</span>{" "}
-							<span className="text-cyan-400">接入</span>
+							<span className="text-foreground">快速</span>{" "}
+							<span className="text-cyan-600">接入</span>
 						</h2>
-						<p className="text-lg text-white/50">
+						<p className="text-lg text-muted-foreground">
 							添加配置到 Claude Desktop 或设备固件，即刻开始使用。
 						</p>
 					</div>
 
 					{/* Code block */}
-					<div className="rounded-2xl border border-white/10 bg-[#0d0d14] overflow-hidden">
-						<div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/[0.02]">
+					<div className="rounded-2xl border border-border bg-card overflow-hidden">
+						<div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card">
 							<div className="flex gap-1.5">
 								<div className="w-3 h-3 rounded-full bg-red-500/80" />
 								<div className="w-3 h-3 rounded-full bg-yellow-500/80" />
 								<div className="w-3 h-3 rounded-full bg-green-500/80" />
 							</div>
-							<span className="text-xs text-white/40 ml-2 font-mono">
+							<span className="text-xs text-muted-foreground ml-2 font-mono">
 								mcp_config.json
 							</span>
 						</div>
 						<pre className="p-6 overflow-x-auto">
 							<code className="text-sm font-mono leading-relaxed">
-								<span className="text-white/30">{"{"}</span>
+								<span className="text-muted-foreground/60">{"{"}</span>
 								{"\n"}
-								<span className="text-white/30">{"  "}</span>
-								<span className="text-cyan-400">"mcpServers"</span>
-								<span className="text-white/30">: {"{"}</span>
+								<span className="text-muted-foreground/60">{"  "}</span>
+								<span className="text-cyan-600">"mcpServers"</span>
+								<span className="text-muted-foreground/60">: {"{"}</span>
 								{"\n"}
-								<span className="text-white/30">{"    "}</span>
+								<span className="text-muted-foreground/60">{"    "}</span>
 								<span className="text-emerald-400">"boilon-rag"</span>
-								<span className="text-white/30">: {"{"}</span>
+								<span className="text-muted-foreground/60">: {"{"}</span>
 								{"\n"}
-								<span className="text-white/30">{"      "}</span>
+								<span className="text-muted-foreground/60">{"      "}</span>
 								<span className="text-pink-400">"url"</span>
-								<span className="text-white/30">: </span>
+								<span className="text-muted-foreground/60">: </span>
 								<span className="text-amber-300">
 									"https://mcp.boilon.com/mcp/rag"
 								</span>
-								<span className="text-white/30">,</span>
+								<span className="text-muted-foreground/60">,</span>
 								{"\n"}
-								<span className="text-white/30">{"      "}</span>
+								<span className="text-muted-foreground/60">{"      "}</span>
 								<span className="text-pink-400">"transport"</span>
-								<span className="text-white/30">: </span>
+								<span className="text-muted-foreground/60">: </span>
 								<span className="text-amber-300">"sse"</span>
-								<span className="text-white/30">,</span>
+								<span className="text-muted-foreground/60">,</span>
 								{"\n"}
-								<span className="text-white/30">{"      "}</span>
+								<span className="text-muted-foreground/60">{"      "}</span>
 								<span className="text-pink-400">"headers"</span>
-								<span className="text-white/30">: {"{"}</span>
+								<span className="text-muted-foreground/60">: {"{"}</span>
 								{"\n"}
-								<span className="text-white/30">{"        "}</span>
+								<span className="text-muted-foreground/60">{"        "}</span>
 								<span className="text-blue-400">"Authorization"</span>
-								<span className="text-white/30">: </span>
+								<span className="text-muted-foreground/60">: </span>
 								<span className="text-amber-300">"Bearer 你的API密钥"</span>
 								{"\n"}
-								<span className="text-white/30">{"      }"}</span>
+								<span className="text-muted-foreground/60">{"      }"}</span>
 								{"\n"}
-								<span className="text-white/30">{"    }"}</span>
+								<span className="text-muted-foreground/60">{"    }"}</span>
 								{"\n"}
-								<span className="text-white/30">{"  }"}</span>
+								<span className="text-muted-foreground/60">{"  }"}</span>
 								{"\n"}
-								<span className="text-white/30">{"}"}</span>
+								<span className="text-muted-foreground/60">{"}"}</span>
 							</code>
 						</pre>
 					</div>
@@ -402,63 +402,63 @@ function LandingPage() {
 				</div>
 
 				<div className="relative max-w-4xl mx-auto text-center">
-					<div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/30 bg-cyan-500/5 text-cyan-400 text-sm font-medium tracking-wide mb-8">
+					<div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/30 bg-cyan-500/5 text-cyan-600 text-sm font-medium tracking-wide mb-8">
 						<Globe className="w-4 h-4" />
 						<span>现在开始构建</span>
 					</div>
 
 					<h2 className="text-4xl md:text-6xl font-black tracking-tight mb-6">
-						<span className="text-white/90">准备好为你的设备</span>
+						<span className="text-foreground">准备好为你的设备</span>
 						<br />
-						<span className="bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">
+						<span className="bg-gradient-to-r from-cyan-600 to-indigo-600 bg-clip-text text-transparent">
 							赋予 AI 能力了吗？
 						</span>
 					</h2>
 
-					<p className="text-xl text-white/50 max-w-2xl mx-auto mb-10">
+					<p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
 						注册账号，生成 API 密钥，几分钟内即可让你的智能硬件接入 MCP 服务。
 					</p>
 
 					<Link to="/dashboard">
 						<Button
 							size="lg"
-							className="h-16 px-10 text-xl font-semibold bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 border-0 shadow-xl shadow-cyan-500/30 transition-all hover:shadow-cyan-500/50 hover:scale-105"
+							className="h-16 px-10 text-xl font-semibold bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white border-0 shadow-xl shadow-cyan-500/30 transition-all hover:shadow-cyan-500/50 hover:scale-105"
 						>
 							免费开始使用
 							<ArrowRight className="w-6 h-6 ml-2" />
 						</Button>
 					</Link>
 
-					<p className="mt-6 text-sm text-white/30">无需信用卡 · 提供免费额度</p>
+					<p className="mt-6 text-sm text-muted-foreground/60">无需信用卡 · 提供免费额度</p>
 				</div>
 			</section>
 
 			{/* Footer */}
-			<footer className="border-t border-white/10 py-12 px-6">
+			<footer className="border-t border-border py-12 px-6">
 				<div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
 					<div className="flex items-center gap-3">
 						<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
 							<Zap className="w-4 h-4 text-white" />
 						</div>
-						<span className="text-lg font-bold text-white">Boilon MCP</span>
+						<span className="text-lg font-bold text-foreground">Boilon MCP</span>
 					</div>
 
-					<div className="flex items-center gap-8 text-sm text-white/40">
-						<a href="#" className="hover:text-white/70 transition-colors">
+					<div className="flex items-center gap-8 text-sm text-muted-foreground">
+						<a href="#" className="hover:text-foreground/70 transition-colors">
 							开发文档
 						</a>
-						<a href="#" className="hover:text-white/70 transition-colors">
+						<a href="#" className="hover:text-foreground/70 transition-colors">
 							API 参考
 						</a>
-						<a href="#" className="hover:text-white/70 transition-colors">
+						<a href="#" className="hover:text-foreground/70 transition-colors">
 							服务状态
 						</a>
-						<a href="#" className="hover:text-white/70 transition-colors">
+						<a href="#" className="hover:text-foreground/70 transition-colors">
 							GitHub
 						</a>
 					</div>
 
-					<div className="text-sm text-white/30">
+					<div className="text-sm text-muted-foreground/60">
 						© 2025 Boilon MCP. 保留所有权利。
 					</div>
 				</div>

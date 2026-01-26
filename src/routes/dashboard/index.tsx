@@ -29,10 +29,10 @@ function DashboardPage() {
 					<div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center mb-6">
 						<Zap className="w-8 h-8 text-white" />
 					</div>
-					<h1 className="text-3xl font-bold text-white mb-4">
+					<h1 className="text-3xl font-bold text-foreground mb-4">
 						欢迎使用 Boilon MCP
 					</h1>
-					<p className="text-white/50 max-w-md mb-8">
+					<p className="text-muted-foreground max-w-md mb-8">
 						登录后即可管理 API 密钥、查看用量统计、配置 MCP 服务。
 					</p>
 					<div className="flex gap-4">
@@ -42,7 +42,7 @@ function DashboardPage() {
 						<Link to="/auth/register">
 							<Button
 								variant="outline"
-								className="border-white/20 text-white hover:bg-white/5"
+								className="border-border text-foreground hover:bg-muted"
 							>
 								注册新账号
 							</Button>
@@ -146,8 +146,8 @@ function DashboardPage() {
 			<div className="space-y-8">
 				{/* Header */}
 				<div>
-					<h1 className="text-2xl font-bold text-white">控制台概览</h1>
-					<p className="text-white/50 mt-1">
+					<h1 className="text-2xl font-bold text-foreground">控制台概览</h1>
+					<p className="text-muted-foreground mt-1">
 						欢迎回来，{session?.user?.name || "用户"}
 					</p>
 				</div>
@@ -157,11 +157,11 @@ function DashboardPage() {
 					{stats.map((stat) => (
 						<div
 							key={stat.name}
-							className="bg-white/[0.02] border border-white/10 rounded-xl p-5"
+							className="bg-card border border-border rounded-xl p-5"
 						>
 							<div className="flex items-center justify-between">
 								<div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-									<stat.icon className="w-5 h-5 text-cyan-400" />
+									<stat.icon className="w-5 h-5 text-cyan-600" />
 								</div>
 								<span
 									className={`text-xs font-medium px-2 py-1 rounded-full ${
@@ -169,15 +169,15 @@ function DashboardPage() {
 											? "bg-emerald-500/10 text-emerald-400"
 											: stat.changeType === "warning"
 												? "bg-amber-500/10 text-amber-400"
-												: "bg-white/5 text-white/40"
+												: "bg-muted text-muted-foreground"
 									}`}
 								>
 									{stat.change}
 								</span>
 							</div>
 							<div className="mt-4">
-								<div className="text-2xl font-bold text-white">{stat.value}</div>
-								<div className="text-sm text-white/50">{stat.name}</div>
+								<div className="text-2xl font-bold text-foreground">{stat.value}</div>
+								<div className="text-sm text-muted-foreground">{stat.name}</div>
 							</div>
 						</div>
 					))}
@@ -186,14 +186,14 @@ function DashboardPage() {
 				{/* Services and Activity */}
 				<div className="grid lg:grid-cols-2 gap-6">
 					{/* Services */}
-					<div className="bg-white/[0.02] border border-white/10 rounded-xl p-6">
+					<div className="bg-card border border-border rounded-xl p-6">
 						<div className="flex items-center justify-between mb-6">
-							<h2 className="text-lg font-semibold text-white">服务状态</h2>
+							<h2 className="text-lg font-semibold text-foreground">服务状态</h2>
 							<Link to="/dashboard/services">
 								<Button
 									variant="ghost"
 									size="sm"
-									className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+									className="text-cyan-600 hover:text-cyan-500 hover:bg-cyan-500/10"
 								>
 									查看全部
 									<ArrowUpRight className="w-4 h-4 ml-1" />
@@ -204,7 +204,7 @@ function DashboardPage() {
 							{services.map((service) => (
 								<div
 									key={service.name}
-									className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] border border-white/5"
+									className="flex items-center justify-between p-4 rounded-lg bg-card border border-border/50"
 								>
 									<div className="flex items-center gap-4">
 										<div
@@ -213,10 +213,10 @@ function DashboardPage() {
 											<service.icon className="w-5 h-5 text-white" />
 										</div>
 										<div>
-											<div className="font-medium text-white">
+											<div className="font-medium text-foreground">
 												{service.name}
 											</div>
-											<div className="text-sm text-white/40">
+											<div className="text-sm text-muted-foreground">
 												{service.calls} 次调用
 											</div>
 										</div>
@@ -231,26 +231,26 @@ function DashboardPage() {
 					</div>
 
 					{/* Recent Activity */}
-					<div className="bg-white/[0.02] border border-white/10 rounded-xl p-6">
+					<div className="bg-card border border-border rounded-xl p-6">
 						<div className="flex items-center justify-between mb-6">
-							<h2 className="text-lg font-semibold text-white">最近活动</h2>
+							<h2 className="text-lg font-semibold text-foreground">最近活动</h2>
 						</div>
 						<div className="space-y-4">
 							{recentActivity.map((activity, i) => (
 								<div
 									key={i}
-									className="flex items-center justify-between py-3 border-b border-white/5 last:border-0"
+									className="flex items-center justify-between py-3 border-b border-border/50 last:border-0"
 								>
 									<div>
-										<div className="text-sm font-medium text-white">
+										<div className="text-sm font-medium text-foreground">
 											{activity.action}
 										</div>
-										<div className="text-xs text-white/40">
+										<div className="text-xs text-muted-foreground">
 											{activity.service !== "-" && `${activity.service} · `}
 											<span className="font-mono">{activity.tool}</span>
 										</div>
 									</div>
-									<div className="text-xs text-white/40">{activity.time}</div>
+									<div className="text-xs text-muted-foreground">{activity.time}</div>
 								</div>
 							))}
 						</div>
@@ -258,32 +258,32 @@ function DashboardPage() {
 				</div>
 
 				{/* Quick Actions */}
-				<div className="bg-white/[0.02] border border-white/10 rounded-xl p-6">
-					<h2 className="text-lg font-semibold text-white mb-4">快速操作</h2>
+				<div className="bg-card border border-border rounded-xl p-6">
+					<h2 className="text-lg font-semibold text-foreground mb-4">快速操作</h2>
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 						<Link to="/dashboard/api-keys">
-							<div className="p-4 rounded-lg border border-white/10 hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-colors cursor-pointer">
-								<Key className="w-6 h-6 text-cyan-400 mb-3" />
-								<div className="font-medium text-white">创建 API 密钥</div>
-								<div className="text-sm text-white/40 mt-1">
+							<div className="p-4 rounded-lg border border-border hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-colors cursor-pointer">
+								<Key className="w-6 h-6 text-cyan-600 mb-3" />
+								<div className="font-medium text-foreground">创建 API 密钥</div>
+								<div className="text-sm text-muted-foreground mt-1">
 									为新设备或服务生成访问密钥
 								</div>
 							</div>
 						</Link>
 						<Link to="/dashboard/team">
-							<div className="p-4 rounded-lg border border-white/10 hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-colors cursor-pointer">
-								<Users className="w-6 h-6 text-cyan-400 mb-3" />
-								<div className="font-medium text-white">邀请团队成员</div>
-								<div className="text-sm text-white/40 mt-1">
+							<div className="p-4 rounded-lg border border-border hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-colors cursor-pointer">
+								<Users className="w-6 h-6 text-cyan-600 mb-3" />
+								<div className="font-medium text-foreground">邀请团队成员</div>
+								<div className="text-sm text-muted-foreground mt-1">
 									添加开发者或管理员到团队
 								</div>
 							</div>
 						</Link>
 						<Link to="/dashboard/services">
-							<div className="p-4 rounded-lg border border-white/10 hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-colors cursor-pointer">
-								<Database className="w-6 h-6 text-cyan-400 mb-3" />
-								<div className="font-medium text-white">配置服务</div>
-								<div className="text-sm text-white/40 mt-1">
+							<div className="p-4 rounded-lg border border-border hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-colors cursor-pointer">
+								<Database className="w-6 h-6 text-cyan-600 mb-3" />
+								<div className="font-medium text-foreground">配置服务</div>
+								<div className="text-sm text-muted-foreground mt-1">
 									管理 MCP 服务的设置和权限
 								</div>
 							</div>

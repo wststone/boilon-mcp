@@ -1,9 +1,28 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { desc, eq, ilike, or } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "@/db";
-import { ragDocuments } from "@/db/schema";
 import type { RagDocument, RagSearchResult } from "../types";
+
+// In-memory document storage (per organization)
+const documentStores = new Map<
+	string,
+	Array<{
+		id: number;
+		title: string;
+		content: string;
+		metadata: Record<string, unknown>;
+		createdAt: Date;
+		updatedAt: Date;
+	}>
+>();
+
+let nextDocId = 1;
+
+function getStore(organizationId: string) {
+	if (!documentStores.has(organizationId)) {
+		documentStores.set(organizationId, []);
+	}
+	return documentStores.get(organizationId)!;
+}
 
 /**
  * Simple cosine similarity for basic vector search
@@ -80,11 +99,7 @@ export function createRagServer(organizationId: string): McpServer {
 			query,
 			limit,
 		}): Promise<{ content: Array<{ type: "text"; text: string }> }> => {
-			// Get all documents for this organization
-			const docs = await db
-				.select()
-				.from(ragDocuments)
-				.where(eq(ragDocuments.organizationId, organizationId));
+			const docs = getStore(organizationId);
 
 			if (docs.length === 0) {
 				return {
@@ -124,21 +139,17 @@ export function createRagServer(organizationId: string): McpServer {
 						similarity,
 					};
 				})
-				.filter((doc) => doc.similarity > 0.1) // Filter low relevance
+				.filter((doc) => doc.similarity > 0.1)
 				.sort((a, b) => b.similarity - a.similarity)
 				.slice(0, limit);
 
 			// Also do keyword search as fallback
-			const keywordResults = await db
-				.select()
-				.from(ragDocuments)
-				.where(
-					or(
-						ilike(ragDocuments.title, `%${query}%`),
-						ilike(ragDocuments.content, `%${query}%`),
-					),
-				)
-				.limit(limit);
+			const queryLower = query.toLowerCase();
+			const keywordResults = docs.filter(
+				(doc) =>
+					doc.title.toLowerCase().includes(queryLower) ||
+					doc.content.toLowerCase().includes(queryLower),
+			);
 
 			// Merge results, preferring semantic matches
 			const seenIds = new Set(results.map((r) => r.id));
@@ -149,7 +160,7 @@ export function createRagServer(organizationId: string): McpServer {
 						title: doc.title,
 						content: doc.content,
 						metadata: doc.metadata || {},
-						similarity: 0.5, // Give keyword matches a middle score
+						similarity: 0.5,
 					});
 				}
 			}
@@ -188,17 +199,16 @@ export function createRagServer(organizationId: string): McpServer {
 			content,
 			metadata,
 		}): Promise<{ content: Array<{ type: "text"; text: string }> }> => {
-			const [newDoc] = await db
-				.insert(ragDocuments)
-				.values({
-					organizationId,
-					title,
-					content,
-					metadata: metadata || {},
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				})
-				.returning();
+			const store = getStore(organizationId);
+			const newDoc = {
+				id: nextDocId++,
+				title,
+				content,
+				metadata: metadata || {},
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			};
+			store.push(newDoc);
 
 			return {
 				content: [
@@ -243,23 +253,16 @@ export function createRagServer(organizationId: string): McpServer {
 			limit,
 			offset,
 		}): Promise<{ content: Array<{ type: "text"; text: string }> }> => {
-			const docs = await db
-				.select({
-					id: ragDocuments.id,
-					title: ragDocuments.title,
-					createdAt: ragDocuments.createdAt,
-					metadata: ragDocuments.metadata,
-				})
-				.from(ragDocuments)
-				.where(eq(ragDocuments.organizationId, organizationId))
-				.orderBy(desc(ragDocuments.createdAt))
-				.limit(limit)
-				.offset(offset);
-
-			const totalCount = await db
-				.select()
-				.from(ragDocuments)
-				.where(eq(ragDocuments.organizationId, organizationId));
+			const store = getStore(organizationId);
+			const docs = store
+				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+				.slice(offset, offset + limit)
+				.map((d) => ({
+					id: d.id,
+					title: d.title,
+					createdAt: d.createdAt,
+					metadata: d.metadata,
+				}));
 
 			return {
 				content: [
@@ -267,7 +270,7 @@ export function createRagServer(organizationId: string): McpServer {
 						type: "text",
 						text: JSON.stringify({
 							documents: docs,
-							total: totalCount.length,
+							total: store.length,
 							limit,
 							offset,
 						}),
@@ -287,12 +290,10 @@ export function createRagServer(organizationId: string): McpServer {
 		async ({
 			id,
 		}): Promise<{ content: Array<{ type: "text"; text: string }> }> => {
-			const [deleted] = await db
-				.delete(ragDocuments)
-				.where(eq(ragDocuments.id, id))
-				.returning();
+			const store = getStore(organizationId);
+			const index = store.findIndex((d) => d.id === id);
 
-			if (!deleted) {
+			if (index === -1) {
 				return {
 					content: [
 						{
@@ -305,6 +306,8 @@ export function createRagServer(organizationId: string): McpServer {
 					],
 				};
 			}
+
+			const [deleted] = store.splice(index, 1);
 
 			return {
 				content: [
@@ -330,11 +333,8 @@ export function createRagServer(organizationId: string): McpServer {
 		async ({
 			id,
 		}): Promise<{ content: Array<{ type: "text"; text: string }> }> => {
-			const [doc] = await db
-				.select()
-				.from(ragDocuments)
-				.where(eq(ragDocuments.id, id))
-				.limit(1);
+			const store = getStore(organizationId);
+			const doc = store.find((d) => d.id === id);
 
 			if (!doc) {
 				return {

@@ -1,17 +1,26 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Menu, X, Zap, LayoutDashboard, Key, Users, Settings } from "lucide-react";
+import {
+	Home,
+	Key,
+	LayoutDashboard,
+	Menu,
+	Settings,
+	Users,
+	X,
+	Zap,
+} from "lucide-react";
 import { useState } from "react";
-import BetterAuthHeader from "../integrations/better-auth/header-user.tsx";
+import { BetterAuthHeader } from "../integrations/better-auth/header-user.tsx";
 
 export default function Header() {
 	const [isOpen, setIsOpen] = useState(false);
 
 	return (
 		<>
-			<header className="p-4 flex items-center bg-[#0d0d14] text-white border-b border-white/10">
+			<header className="p-4 flex items-center bg-card text-foreground border-b border-border">
 				<button
 					onClick={() => setIsOpen(true)}
-					className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+					className="p-2 hover:bg-muted rounded-lg transition-colors"
 					aria-label="Open menu"
 				>
 					<Menu size={24} />
@@ -27,15 +36,15 @@ export default function Header() {
 			</header>
 
 			<aside
-				className={`fixed top-0 left-0 h-full w-80 bg-[#0d0d14] text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col border-r border-white/10 ${
+				className={`fixed top-0 left-0 h-full w-80 bg-card text-foreground shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col border-r border-border ${
 					isOpen ? "translate-x-0" : "-translate-x-full"
 				}`}
 			>
-				<div className="flex items-center justify-between p-4 border-b border-white/10">
+				<div className="flex items-center justify-between p-4 border-b border-border">
 					<h2 className="text-xl font-bold">导航菜单</h2>
 					<button
 						onClick={() => setIsOpen(false)}
-						className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+						className="p-2 hover:bg-muted rounded-lg transition-colors"
 						aria-label="Close menu"
 					>
 						<X size={24} />
@@ -46,29 +55,29 @@ export default function Header() {
 					<Link
 						to="/"
 						onClick={() => setIsOpen(false)}
-						className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors mb-2"
+						className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors mb-2"
 						activeProps={{
 							className:
-								"flex items-center gap-3 p-3 rounded-lg bg-cyan-500/10 text-cyan-400 transition-colors mb-2",
+								"flex items-center gap-3 p-3 rounded-lg bg-cyan-500/10 text-cyan-600 transition-colors mb-2",
 						}}
 					>
 						<Home size={20} />
 						<span className="font-medium">首页</span>
 					</Link>
 
-					<div className="my-4 border-t border-white/10" />
+					<div className="my-4 border-t border-border" />
 
-					<div className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3 px-3">
+					<div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-3">
 						控制台
 					</div>
 
 					<Link
 						to="/dashboard"
 						onClick={() => setIsOpen(false)}
-						className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors mb-2"
+						className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors mb-2"
 						activeProps={{
 							className:
-								"flex items-center gap-3 p-3 rounded-lg bg-cyan-500/10 text-cyan-400 transition-colors mb-2",
+								"flex items-center gap-3 p-3 rounded-lg bg-cyan-500/10 text-cyan-600 transition-colors mb-2",
 						}}
 					>
 						<LayoutDashboard size={20} />
@@ -78,10 +87,10 @@ export default function Header() {
 					<Link
 						to="/dashboard/services"
 						onClick={() => setIsOpen(false)}
-						className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors mb-2"
+						className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors mb-2"
 						activeProps={{
 							className:
-								"flex items-center gap-3 p-3 rounded-lg bg-cyan-500/10 text-cyan-400 transition-colors mb-2",
+								"flex items-center gap-3 p-3 rounded-lg bg-cyan-500/10 text-cyan-600 transition-colors mb-2",
 						}}
 					>
 						<Settings size={20} />
@@ -91,10 +100,10 @@ export default function Header() {
 					<Link
 						to="/dashboard/api-keys"
 						onClick={() => setIsOpen(false)}
-						className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors mb-2"
+						className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors mb-2"
 						activeProps={{
 							className:
-								"flex items-center gap-3 p-3 rounded-lg bg-cyan-500/10 text-cyan-400 transition-colors mb-2",
+								"flex items-center gap-3 p-3 rounded-lg bg-cyan-500/10 text-cyan-600 transition-colors mb-2",
 						}}
 					>
 						<Key size={20} />
@@ -104,10 +113,10 @@ export default function Header() {
 					<Link
 						to="/dashboard/team"
 						onClick={() => setIsOpen(false)}
-						className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors mb-2"
+						className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors mb-2"
 						activeProps={{
 							className:
-								"flex items-center gap-3 p-3 rounded-lg bg-cyan-500/10 text-cyan-400 transition-colors mb-2",
+								"flex items-center gap-3 p-3 rounded-lg bg-cyan-500/10 text-cyan-600 transition-colors mb-2",
 						}}
 					>
 						<Users size={20} />
@@ -115,7 +124,7 @@ export default function Header() {
 					</Link>
 				</nav>
 
-				<div className="p-4 border-t border-white/10 bg-[#0a0a0f] flex flex-col gap-2">
+				<div className="p-4 border-t border-border bg-background flex flex-col gap-2">
 					<BetterAuthHeader />
 				</div>
 			</aside>

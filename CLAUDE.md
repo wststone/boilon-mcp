@@ -6,37 +6,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Development
-bun --bun run dev         # Start dev server on port 3000
+bun run dev               # Start dev server on port 5173
 
 # Build & Preview
-bun --bun run build       # Production build
-bun --bun run preview     # Preview production build
+bun run build             # Production build
+bun run preview           # Preview production build
 
 # Unit Testing (Vitest)
-bun --bun run test        # Run unit tests
-bun --bun run test:watch  # Run tests in watch mode
-bun --bun run test:coverage # Run tests with coverage
-bun --bun run test:ui     # Open Vitest UI
+bun run test              # Run unit tests
+bun run test:watch        # Run tests in watch mode
+bun run test:coverage     # Run tests with coverage
+bun run test:ui           # Open Vitest UI
 
 # E2E Testing (Playwright)
-bun --bun run test:e2e        # Run e2e tests
-bun --bun run test:e2e:ui     # Open Playwright UI
-bun --bun run test:e2e:headed # Run with browser visible
-bun --bun run test:e2e:debug  # Debug mode
+bun run test:e2e          # Run e2e tests
+bun run test:e2e:ui       # Open Playwright UI
+bun run test:e2e:headed   # Run with browser visible
+bun run test:e2e:debug    # Debug mode
 
 # Linting & Formatting (Biome)
-bun --bun run lint        # Lint code
-bun --bun run format      # Format code
-bun --bun run check       # Run both lint and format checks
+bun run lint              # Lint code
+bun run format            # Format code
+bun run check             # Run both lint and format checks
 
 # Database (Drizzle + PostgreSQL)
-bun --bun run db:generate # Generate migrations
-bun --bun run db:migrate  # Run migrations
-bun --bun run db:push     # Push schema directly
-bun --bun run db:studio   # Open Drizzle Studio
+bun run db:generate       # Generate migrations
+bun run db:migrate        # Run migrations
+bun run db:push           # Push schema directly
+bun run db:studio         # Open Drizzle Studio
 
 # Shadcn Components
-pnpm dlx shadcn@latest add <component>  # Add new UI component
+bunx shadcn@latest add <component>  # Add new UI component
 ```
 
 ## Architecture

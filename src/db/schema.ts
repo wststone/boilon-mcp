@@ -10,20 +10,8 @@ import {
 	varchar,
 } from "drizzle-orm/pg-core";
 
-// Re-export Better Auth tables
-export {
-	user,
-	session,
-	account,
-	verification,
-	organization,
-	member,
-	invitation,
-	apikey,
-} from "./auth-schema";
-
 // Import for foreign key references
-import { apikey, organization } from "./auth-schema";
+import { apikeys, organizations } from "./auth-schema";
 
 // ============================================
 // Custom MCP Platform Tables
@@ -36,7 +24,7 @@ export const mcpServiceConfig = pgTable(
 		id: serial("id").primaryKey(),
 		organizationId: text("organization_id")
 			.notNull()
-			.references(() => organization.id, { onDelete: "cascade" }),
+			.references(() => organizations.id, { onDelete: "cascade" }),
 		service: varchar("service", { length: 50 }).notNull(), // 'rag', 'weather', 'music'
 		enabled: boolean("enabled").default(true),
 		config: jsonb("config").$type<Record<string, unknown>>(),
@@ -53,8 +41,8 @@ export const apiUsage = pgTable(
 		id: serial("id").primaryKey(),
 		apiKeyId: text("api_key_id")
 			.notNull()
-			.references(() => apikey.id, { onDelete: "cascade" }),
-		organizationId: text("organization_id").references(() => organization.id, {
+			.references(() => apikeys.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id").references(() => organizations.id, {
 			onDelete: "set null",
 		}),
 		service: varchar("service", { length: 50 }).notNull(), // 'rag', 'weather', 'music'
@@ -77,7 +65,7 @@ export const dailyUsageStats = pgTable(
 		id: serial("id").primaryKey(),
 		organizationId: text("organization_id")
 			.notNull()
-			.references(() => organization.id, { onDelete: "cascade" }),
+			.references(() => organizations.id, { onDelete: "cascade" }),
 		service: varchar("service", { length: 50 }).notNull(),
 		date: timestamp("date").notNull(),
 		requestCount: integer("request_count").default(0),
@@ -89,24 +77,6 @@ export const dailyUsageStats = pgTable(
 	],
 );
 
-// RAG Documents storage (for RAG MCP service)
-export const ragDocuments = pgTable(
-	"rag_documents",
-	{
-		id: serial("id").primaryKey(),
-		organizationId: text("organization_id")
-			.notNull()
-			.references(() => organization.id, { onDelete: "cascade" }),
-		title: text("title").notNull(),
-		content: text("content").notNull(),
-		metadata: jsonb("metadata").$type<Record<string, unknown>>(),
-		embedding: jsonb("embedding").$type<number[]>(), // Simple vector storage (can upgrade to pgvector)
-		createdAt: timestamp("created_at").defaultNow(),
-		updatedAt: timestamp("updated_at").defaultNow(),
-	},
-	(table) => [index("rag_docs_org_idx").on(table.organizationId)],
-);
-
 // Saved locations for Weather MCP service
 export const weatherLocations = pgTable(
 	"weather_locations",
@@ -114,7 +84,7 @@ export const weatherLocations = pgTable(
 		id: serial("id").primaryKey(),
 		organizationId: text("organization_id")
 			.notNull()
-			.references(() => organization.id, { onDelete: "cascade" }),
+			.references(() => organizations.id, { onDelete: "cascade" }),
 		name: text("name").notNull(),
 		lat: text("lat").notNull(),
 		lon: text("lon").notNull(),
@@ -131,7 +101,7 @@ export const musicPreferences = pgTable(
 		id: serial("id").primaryKey(),
 		organizationId: text("organization_id")
 			.notNull()
-			.references(() => organization.id, { onDelete: "cascade" }),
+			.references(() => organizations.id, { onDelete: "cascade" }),
 		favoriteGenres: jsonb("favorite_genres").$type<string[]>(),
 		favoriteArtists: jsonb("favorite_artists").$type<string[]>(),
 		createdAt: timestamp("created_at").defaultNow(),
@@ -139,3 +109,23 @@ export const musicPreferences = pgTable(
 	},
 	(table) => [index("music_pref_org_idx").on(table.organizationId)],
 );
+
+// ============================================
+// Knowledge Base Tables
+// ============================================
+
+// Re-export from separate modules
+export { asyncTasks } from "./asyncTask";
+export {
+	accounts,
+	apikeys,
+	invitations,
+	members,
+	organizations,
+	sessions,
+	users,
+	verifications,
+} from "./auth-schema";
+export { documents, documentChunks } from "./document";
+export { chunks, embeddings } from "./embedding";
+export { files, knowledgeBaseFiles, knowledgeBases } from "./file";
