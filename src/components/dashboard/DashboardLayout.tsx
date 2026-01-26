@@ -38,7 +38,7 @@ const services = [
 	{ name: "新闻服务", href: "/dashboard/news", icon: Newspaper },
 ];
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children }: DashboardLayoutProps) {
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const location = useLocation();
 	const { data: session } = useSession();

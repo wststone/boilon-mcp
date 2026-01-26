@@ -64,7 +64,9 @@ function TeamPage() {
 		queryKey: ["organization", activeOrg?.id],
 		queryFn: async () => {
 			const result = await organization.getFullOrganization({
-				organizationId: activeOrg?.id,
+				query: {
+					organizationId: activeOrg?.id,
+				},
 			});
 			if (result.error) throw new Error(result.error.message);
 			return result.data;

@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { apiKey, useSession } from "@/lib/auth-client";
+import { apiKey } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/dashboard/api-keys")({
 	component: ApiKeysPage,
@@ -44,7 +44,6 @@ function formatLastUsed(date: Date | string | null) {
 }
 
 function ApiKeysPage() {
-	const { data: session } = useSession();
 	const queryClient = useQueryClient();
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [newKeyName, setNewKeyName] = useState("");
@@ -61,9 +60,9 @@ function ApiKeysPage() {
 		queryFn: async () => {
 			const result = await apiKey.list();
 			if (result.error) throw new Error(result.error.message);
+
 			return result.data ?? [];
 		},
-		enabled: !!session?.user,
 	});
 
 	// 创建密钥
