@@ -17,6 +17,9 @@ const config = defineConfig({
 		devtools(),
 		nitro({
 			preset: "vercel",
+			rollupConfig: {
+				external: ["mammoth"],
+			},
 		}),
 		// this is the plugin that enables path aliases
 		viteTsConfigPaths({
