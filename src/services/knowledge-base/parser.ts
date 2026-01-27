@@ -1,5 +1,5 @@
 import { createServerOnlyFn } from "@tanstack/react-start";
-import mammoth from "mammoth";
+import JSZip from "jszip";
 import { PDFParse } from "pdf-parse";
 import { getFileContent } from "./storage";
 
@@ -87,15 +87,31 @@ async function parseMD(content: ArrayBuffer): Promise<ParsedDocument> {
 
 /**
  * 解析 DOCX 文件
+ * DOCX 是 ZIP 格式，文本内容在 word/document.xml 的 <w:t> 元素中
  */
 async function parseDOCX(content: ArrayBuffer): Promise<ParsedDocument> {
-	const buffer = Buffer.from(content);
-	const result = await mammoth.extractRawText({ buffer });
+	const zip = await JSZip.loadAsync(content);
+	const docXml = zip.file("word/document.xml");
+	if (!docXml) {
+		throw new Error("无效的 DOCX 文件：缺少 word/document.xml");
+	}
+
+	const xml = await docXml.async("string");
+
+	// 提取 <w:t> 元素中的文本，<w:br/> 和 </w:p> 作为换行
+	const text = xml
+		.replace(/<w:br\b[^>]*\/>/gi, "\n")
+		.replace(/<\/w:p>/gi, "\n")
+		.replace(/<w:tab\/>/gi, "\t")
+		.replace(/<w:t[^>]*>([\s\S]*?)<\/w:t>/gi, "$1")
+		.replace(/<[^>]+>/g, "")
+		.replace(/\n{3,}/g, "\n\n")
+		.trim();
 
 	return {
-		content: result.value,
+		content: text,
 		metadata: {
-			wordCount: countWords(result.value),
+			wordCount: countWords(text),
 		},
 	};
 }
