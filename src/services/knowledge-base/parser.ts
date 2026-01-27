@@ -1,3 +1,4 @@
+import { createServerOnlyFn } from "@tanstack/react-start";
 import mammoth from "mammoth";
 import { PDFParse } from "pdf-parse";
 import { getFileContent } from "./storage";
@@ -14,27 +15,26 @@ export interface ParsedDocument {
 /**
  * 解析文件内容
  */
-export async function parseFile(
-	fileKey: string,
-	fileType: string,
-): Promise<ParsedDocument> {
-	const content = await getFileContent(fileKey);
+export const parseFile = createServerOnlyFn(
+	async (fileKey: string, fileType: string) => {
+		const content = await getFileContent(fileKey);
 
-	switch (fileType.toLowerCase()) {
-		case "pdf":
-			return parsePDF(content);
-		case "txt":
-		case "text":
-			return parseTXT(content);
-		case "md":
-		case "markdown":
-			return parseMD(content);
-		case "docx":
-			return parseDOCX(content);
-		default:
-			throw new Error(`不支持的文件类型: ${fileType}`);
-	}
-}
+		switch (fileType.toLowerCase()) {
+			case "pdf":
+				return parsePDF(content);
+			case "txt":
+			case "text":
+				return parseTXT(content);
+			case "md":
+			case "markdown":
+				return parseMD(content);
+			case "docx":
+				return parseDOCX(content);
+			default:
+				throw new Error(`不支持的文件类型: ${fileType}`);
+		}
+	},
+);
 
 /**
  * 解析 PDF 文件
@@ -112,35 +112,3 @@ function countWords(text: string): number {
 	return chineseChars + englishWords;
 }
 
-/**
- * 根据文件扩展名获取文件类型
- */
-export function getFileTypeFromName(filename: string): string {
-	const ext = filename.split(".").pop()?.toLowerCase();
-	switch (ext) {
-		case "pdf":
-			return "pdf";
-		case "txt":
-			return "txt";
-		case "md":
-		case "markdown":
-			return "md";
-		case "docx":
-			return "docx";
-		default:
-			return ext || "unknown";
-	}
-}
-
-/**
- * 支持的文件类型列表
- */
-export const SUPPORTED_FILE_TYPES = ["pdf", "txt", "md", "markdown", "docx"];
-
-/**
- * 检查文件类型是否支持
- */
-export function isSupportedFileType(filename: string): boolean {
-	const ext = filename.split(".").pop()?.toLowerCase();
-	return SUPPORTED_FILE_TYPES.includes(ext || "");
-}

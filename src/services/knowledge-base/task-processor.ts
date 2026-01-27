@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { asyncTasks } from "@/db/asyncTask";
 import { documentChunks, documents } from "@/db/document";
@@ -7,8 +7,9 @@ import { files } from "@/db/file";
 import { batchInsert } from "@/db/utils";
 import { chunkText } from "./chunker";
 import { generateEmbeddings } from "./embedder";
-import { getFileTypeFromName, parseFile } from "./parser";
-import { extractKeyFromUrl, getFileContent } from "./storage";
+import { getFileTypeFromName } from "./file-types";
+import { parseFile } from "./parser";
+import { extractKeyFromUrl } from "./storage";
 
 export type TaskStatus = "pending" | "processing" | "completed" | "failed";
 
