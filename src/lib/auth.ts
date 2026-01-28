@@ -50,7 +50,7 @@ export const auth = betterAuth({
 		}),
 		tanstackStartCookies(),
 	],
-	trustedOrigins: ["http://localhost:5173"],
+	trustedOrigins: [import.meta.env.VITE_APP_URL],
 });
 
 export type Session = typeof auth.$Infer.Session;
