@@ -1,12 +1,10 @@
 import { format } from "date-fns";
 import { v4 } from "uuid";
-
+import { parseDataUri } from "@/lib/utils";
 import {
 	$createFile,
 	$createSignedUrl,
 } from "@/services/knowledge-base/storage";
-
-import { parseDataUri } from "@/lib/utils";
 
 export const UPLOAD_NETWORK_ERROR = "NetWorkError";
 

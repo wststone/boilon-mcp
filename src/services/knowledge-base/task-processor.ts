@@ -1,9 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { asyncTasks } from "@/db/asyncTask";
-import { documentChunks, documents } from "@/db/document";
-import { chunks, embeddings } from "@/db/embedding";
-import { files } from "@/db/file";
+import { asyncTasks,chunks, documentChunks, documents,embeddings,files } from "@/db/schema";
 import { batchInsert } from "@/db/utils";
 import { chunkText } from "./chunker";
 import { generateEmbeddings } from "./embedder";

@@ -3,7 +3,10 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { files, knowledgeBaseFiles, knowledgeBases } from "@/db/file";
 import { apiAuthMiddleware } from "@/middleware";
-import { deleteFile, extractKeyFromUrl } from "@/services/knowledge-base";
+import {
+	deleteFile,
+	extractKeyFromUrl,
+} from "@/services/knowledge-base/storage";
 import { deleteFileData } from "@/services/knowledge-base/task-processor";
 
 export const Route = createFileRoute("/api/knowledge-base/$id/files/$fileId")({

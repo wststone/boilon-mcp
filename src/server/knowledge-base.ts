@@ -4,11 +4,11 @@ import { z } from "zod";
 import { db } from "@/db";
 import { files, knowledgeBaseFiles, knowledgeBases } from "@/db/file";
 import { sessionAuthMiddleware } from "@/middleware/api-auth";
+import { hybridSearch } from "@/services/knowledge-base/search";
 import {
 	deleteFile,
 	extractKeyFromUrl,
-	hybridSearch,
-} from "@/services/knowledge-base";
+} from "@/services/knowledge-base/storage";
 import { deleteFileData } from "@/services/knowledge-base/task-processor";
 
 // ============================================

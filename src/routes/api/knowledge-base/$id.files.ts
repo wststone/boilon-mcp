@@ -4,11 +4,12 @@ import { db } from "@/db";
 import { asyncTasks } from "@/db/asyncTask";
 import { files, knowledgeBaseFiles, knowledgeBases } from "@/db/file";
 import { apiAuthMiddleware } from "@/middleware";
-import { createProcessTask, uploadFile } from "@/services/knowledge-base";
 import {
 	getFileTypeFromName,
 	isSupportedFileType,
 } from "@/services/knowledge-base/file-types";
+import { uploadFile } from "@/services/knowledge-base/storage";
+import { createProcessTask } from "@/services/knowledge-base/task-processor";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 

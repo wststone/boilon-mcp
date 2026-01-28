@@ -6,12 +6,12 @@ import {
 	S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
-import { sessionAuthMiddleware } from "@/middleware";
 import { db } from "@/db";
 import { files } from "@/db/file";
+import { sessionAuthMiddleware } from "@/middleware";
 
 const s3Client = new S3Client({
 	endpoint: process.env.S3_ENDPOINT!,
@@ -28,34 +28,32 @@ const bucket = process.env.S3_BUCKET!;
 /**
  * 上传文件到 S3 Storage
  */
-export async function uploadFile(
-	file: File,
-	userId: string,
-	fileName?: string,
-): Promise<{ url: string; key: string }> {
-	// 使用 UUID 作为文件名，避免中文等特殊字符导致 S3 报错
-	const originalName = fileName || file.name;
-	const extension = originalName.split(".").at(-1);
-	const key = `${userId}/${Date.now()}-${uuidv4()}${extension ? `.${extension}` : ""}`;
+export const uploadFile = createServerOnlyFn(
+	async (file: File, userId: string, fileName?: string) => {
+		// 使用 UUID 作为文件名，避免中文等特殊字符导致 S3 报错
+		const originalName = fileName || file.name;
+		const extension = originalName.split(".").at(-1);
+		const key = `${userId}/${Date.now()}-${uuidv4()}${extension ? `.${extension}` : ""}`;
 
-	const buffer = await file.arrayBuffer();
-	await s3Client.send(
-		new PutObjectCommand({
-			Bucket: bucket,
-			Key: key,
-			Body: Buffer.from(buffer),
-			ContentType: file.type,
-		}),
-	);
+		const buffer = await file.arrayBuffer();
+		await s3Client.send(
+			new PutObjectCommand({
+				Bucket: bucket,
+				Key: key,
+				Body: Buffer.from(buffer),
+				ContentType: file.type,
+			}),
+		);
 
-	const url = `${process.env.S3_ENDPOINT}/${bucket}/${key}`;
-	return { url, key };
-}
+		const url = `${process.env.S3_ENDPOINT}/${bucket}/${key}`;
+		return { url, key };
+	},
+);
 
 /**
  * 获取文件内容
  */
-export async function getFileContent(key: string): Promise<ArrayBuffer> {
+export const getFileContent = createServerOnlyFn(async (key: string) => {
 	const response = await s3Client.send(
 		new GetObjectCommand({
 			Bucket: bucket,
@@ -64,12 +62,12 @@ export async function getFileContent(key: string): Promise<ArrayBuffer> {
 	);
 	const bytes = await response.Body!.transformToByteArray();
 	return bytes.buffer as ArrayBuffer;
-}
+});
 
 /**
  * 获取文件作为文本
  */
-export async function getFileAsText(key: string): Promise<string> {
+export const getFileAsText = createServerOnlyFn(async (key: string) => {
 	const response = await s3Client.send(
 		new GetObjectCommand({
 			Bucket: bucket,
@@ -77,24 +75,24 @@ export async function getFileAsText(key: string): Promise<string> {
 		}),
 	);
 	return await response.Body!.transformToString();
-}
+});
 
 /**
  * 删除文件
  */
-export async function deleteFile(key: string): Promise<void> {
+export const deleteFile = createServerOnlyFn(async (key: string) => {
 	await s3Client.send(
 		new DeleteObjectCommand({
 			Bucket: bucket,
 			Key: key,
 		}),
 	);
-}
+});
 
 /**
  * 检查文件是否存在
  */
-export async function fileExists(key: string): Promise<boolean> {
+export const fileExists = createServerOnlyFn(async (key: string) => {
 	try {
 		await s3Client.send(
 			new HeadObjectCommand({
@@ -106,17 +104,17 @@ export async function fileExists(key: string): Promise<boolean> {
 	} catch {
 		return false;
 	}
-}
+});
 
 /**
  * 从 URL 提取存储 key
  */
-export function extractKeyFromUrl(url: string): string {
+export const extractKeyFromUrl = createServerOnlyFn((url: string) => {
 	const bucketName = process.env.S3_BUCKET || "knowledge-base";
 	const pattern = new RegExp(`/${bucketName}/(.+)$`);
 	const match = url.match(pattern);
 	return match ? match[1] : url;
-}
+});
 
 export const $createSignedUrl = createServerFn({ method: "POST" })
 	.middleware([sessionAuthMiddleware])

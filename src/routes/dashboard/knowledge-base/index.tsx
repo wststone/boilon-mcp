@@ -4,7 +4,6 @@ import { Database, FileText, Loader2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { CreateKBModal } from "@/components/knowledge-base";
 import { Button } from "@/components/ui/button";
-import { useSession } from "@/lib/auth-client";
 import {
 	$createKnowledgeBase,
 	$deleteKnowledgeBase,
@@ -17,7 +16,6 @@ export const Route = createFileRoute("/dashboard/knowledge-base/")({
 });
 
 function KnowledgeBaseListPage() {
-	const { data: session, isPending: isSessionPending } = useSession();
 	const [showCreateModal, setShowCreateModal] = useState(false);
 
 	// 获取知识库列表
@@ -29,7 +27,6 @@ function KnowledgeBaseListPage() {
 		queryKey: ["knowledge-bases"],
 		queryFn: () =>
 			$listKnowledgeBases() as Promise<KnowledgeBaseWithFileCount[]>,
-		enabled: !!session?.user,
 	});
 
 	// 创建知识库
@@ -58,24 +55,6 @@ function KnowledgeBaseListPage() {
 			await deleteMutation.mutateAsync(id);
 		}
 	};
-
-	// 如果未登录
-	if (!isSessionPending && !session?.user) {
-		return (
-			<div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-				<div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center mb-6">
-					<Database className="w-8 h-8 text-white" />
-				</div>
-				<h1 className="text-3xl font-bold text-foreground mb-4">知识库</h1>
-				<p className="text-muted-foreground max-w-md mb-8">
-					登录后即可创建和管理你的知识库，上传文档并进行语义搜索。
-				</p>
-				<Link to="/auth/login">
-					<Button className="bg-cyan-500 hover:bg-cyan-600">登录账号</Button>
-				</Link>
-			</div>
-		);
-	}
 
 	const formatDate = (date: Date | string) => {
 		const d = date instanceof Date ? date : new Date(date);
