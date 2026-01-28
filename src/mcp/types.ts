@@ -1,4 +1,4 @@
-export type McpService = "rag" | "weather" | "music" | "news";
+export type McpService = "rag" | "weather" | "music" | "news" | "unified";
 
 export interface McpToolResult {
 	content: Array<{

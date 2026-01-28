@@ -10,4 +10,4 @@ This project uses biome as the linter and formatter.
 
 ## Package Manager
 
-This project uses pnpm as the package manager
+This project uses bun as the package manager

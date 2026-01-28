@@ -15,13 +15,7 @@ const SERVICE_DEFINITIONS = {
 		description:
 			"语义文档搜索和检索服务。上传知识库文档，让设备能够智能回答问题。",
 		endpoint: "/mcp/rag",
-		tools: [
-			"search_documents",
-			"add_document",
-			"list_documents",
-			"delete_document",
-			"get_document",
-		],
+		tools: ["search_knowledge"],
 	},
 	weather: {
 		name: "天气服务",

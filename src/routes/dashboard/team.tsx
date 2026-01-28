@@ -4,6 +4,7 @@ import {
 	Crown,
 	Loader2,
 	Mail,
+	Plus,
 	Shield,
 	Trash2,
 	User,
@@ -12,7 +13,15 @@ import {
 } from "lucide-react";
 import { useCallback, useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -58,6 +67,8 @@ function TeamPage() {
 	const [showInviteModal, setShowInviteModal] = useState(false);
 	const [inviteEmail, setInviteEmail] = useState("");
 	const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
+	const [createOrgName, setCreateOrgName] = useState<string | null>(null);
+	const showCreateOrgModal = createOrgName !== null;
 
 	// 获取组织完整数据（成员 + 邀请）
 	const { data: fullOrg, isLoading } = useQuery({
@@ -159,6 +170,38 @@ function TeamPage() {
 		},
 	});
 
+	// 创建组织
+	const createOrgMutation = useMutation({
+		mutationKey: ["organization", "create"],
+		mutationFn: async (name: string) => {
+			const slug =
+				name
+					.toLowerCase()
+					.trim()
+					.replace(/\s+/g, "-")
+					.replace(/[^a-z0-9-]/g, "") || `org-${Date.now()}`;
+			const result = await organization.create({ name, slug });
+			if (result.error) throw new Error(result.error.message);
+			// 设置新组织为活跃组织
+			await organization.setActive({ organizationId: result.data.id });
+			return result.data;
+		},
+		meta: {
+			success: { message: "组织创建成功" },
+			error: { message: "创建组织失败" },
+		},
+	});
+
+	const handleCreateOrg = useCallback(async () => {
+		if (!createOrgName?.trim()) return;
+		try {
+			await createOrgMutation.mutateAsync(createOrgName.trim());
+			setCreateOrgName(null);
+		} catch {
+			// 错误由 MutationCache 统一处理
+		}
+	}, [createOrgName, createOrgMutation]);
+
 	const handleInvite = useCallback(async () => {
 		if (!inviteEmail.trim()) return;
 		try {
@@ -203,10 +246,63 @@ function TeamPage() {
 					<h1 className="text-2xl font-bold text-foreground">团队管理</h1>
 					<p className="text-muted-foreground mt-1">管理团队成员和权限</p>
 				</div>
-				<div className="bg-card border border-border rounded-xl p-12 text-center">
-					<Users className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-					<div className="text-muted-foreground">请先创建或选择一个组织</div>
-				</div>
+				<Empty className="border border-border bg-card rounded-xl py-12">
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<Users className="w-5 h-5" />
+						</EmptyMedia>
+						<EmptyTitle>暂无组织</EmptyTitle>
+						<EmptyDescription>
+							创建一个组织来管理团队成员、API 密钥和 MCP 服务
+						</EmptyDescription>
+					</EmptyHeader>
+					<Button onClick={() => setCreateOrgName("")}>
+						<Plus className="w-4 h-4 mr-2" />
+						创建组织
+					</Button>
+				</Empty>
+
+				{/* 创建组织弹窗 */}
+				{showCreateOrgModal && (
+					<div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+						<div className="bg-card border border-border rounded-2xl w-full max-w-md">
+							<div className="p-6 border-b border-border">
+								<h2 className="text-xl font-semibold text-foreground">
+									创建组织
+								</h2>
+							</div>
+							<div className="p-6 space-y-4">
+								<div>
+									<Label className="text-foreground/70">组织名称</Label>
+									<Input
+										placeholder="输入组织名称"
+										value={createOrgName ?? ""}
+										onChange={(e) => setCreateOrgName(e.target.value)}
+										className="mt-2 bg-muted border-border text-foreground placeholder:text-muted-foreground/60"
+									/>
+								</div>
+							</div>
+							<div className="p-6 border-t border-border flex justify-end gap-3">
+								<Button
+									variant="ghost"
+									className="text-muted-foreground hover:text-foreground hover:bg-muted"
+									onClick={() => setCreateOrgName(null)}
+								>
+									取消
+								</Button>
+								<Button
+									className="bg-cyan-500 hover:bg-cyan-600"
+									onClick={handleCreateOrg}
+									disabled={
+										!createOrgName?.trim() || createOrgMutation.isPending
+									}
+								>
+									{createOrgMutation.isPending ? "创建中..." : "创建"}
+								</Button>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		);
 	}
@@ -354,11 +450,12 @@ function TeamPage() {
 											</td>
 											<td className="px-6 py-4">
 												{role === "owner" ? (
-													<span
-														className={`px-2.5 py-1 rounded-full text-xs font-medium ${roleLabels.owner.color}`}
-													>
-														{roleLabels.owner.label}
-													</span>
+													<Badge
+													variant="ghost"
+													className={roleLabels.owner.color}
+												>
+													{roleLabels.owner.label}
+												</Badge>
 												) : (
 													<Select
 														value={member.role}
@@ -447,15 +544,16 @@ function TeamPage() {
 										</div>
 									</div>
 									<div className="flex items-center gap-3">
-										<span
-											className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+										<Badge
+											variant="ghost"
+											className={
 												status === "pending"
 													? "bg-amber-500/10 text-amber-400"
 													: "bg-muted text-muted-foreground"
-											}`}
+											}
 										>
 											{status === "pending" ? "等待接受" : "已过期"}
-										</span>
+										</Badge>
 										<Button
 											variant="ghost"
 											size="sm"

@@ -6,18 +6,9 @@ import { knowledgeBases } from "@/db/file";
 import { globalSearch, hybridSearch } from "@/services/knowledge-base/search";
 
 /**
- * Creates and configures the RAG MCP server
- * 只暴露 search_knowledge 工具，使用真实的混合搜索（向量 + 关键词）
+ * 在 McpServer 上注册 RAG 知识库相关工具
  */
-export function createRagServer(
-	_organizationId: string,
-	userId: string,
-): McpServer {
-	const server = new McpServer({
-		name: "boilon-rag",
-		version: "1.0.0",
-	});
-
+export function registerRagTools(server: McpServer, userId: string) {
 	// Tool: 搜索知识库
 	server.tool(
 		"search_knowledge",
@@ -113,6 +104,22 @@ export function createRagServer(
 			};
 		},
 	);
+}
+
+/**
+ * Creates and configures the RAG MCP server
+ * 只暴露 search_knowledge 工具，使用真实的混合搜索（向量 + 关键词）
+ */
+export function createRagServer(
+	_organizationId: string,
+	userId: string,
+): McpServer {
+	const server = new McpServer({
+		name: "boilon-rag",
+		version: "1.0.0",
+	});
+
+	registerRagTools(server, userId);
 
 	return server;
 }

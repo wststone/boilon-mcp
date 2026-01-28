@@ -23,6 +23,7 @@ import { Route as DashboardNewsRouteImport } from './routes/dashboard/news'
 import { Route as DashboardApiKeysRouteImport } from './routes/dashboard/api-keys'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as ApiMcpRouteImport } from './routes/api/mcp'
 import { Route as DashboardKnowledgeBaseIndexRouteImport } from './routes/dashboard/knowledge-base/index'
 import { Route as ApiKnowledgeBaseIndexRouteImport } from './routes/api/knowledge-base/index'
 import { Route as McpWeatherMessageRouteImport } from './routes/mcp/weather.message'
@@ -31,6 +32,7 @@ import { Route as McpNewsMessageRouteImport } from './routes/mcp/news.message'
 import { Route as McpMusicMessageRouteImport } from './routes/mcp/music.message'
 import { Route as DashboardKnowledgeBaseIdRouteImport } from './routes/dashboard/knowledge-base/$id'
 import { Route as ApiTasksTaskIdRouteImport } from './routes/api/tasks/$taskId'
+import { Route as ApiMcpMessageRouteImport } from './routes/api/mcp.message'
 import { Route as ApiKnowledgeBaseIdRouteImport } from './routes/api/knowledge-base/$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiKnowledgeBaseIdFilesRouteImport } from './routes/api/knowledge-base/$id.files'
@@ -106,6 +108,11 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMcpRoute = ApiMcpRouteImport.update({
+  id: '/api/mcp',
+  path: '/api/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardKnowledgeBaseIndexRoute =
   DashboardKnowledgeBaseIndexRouteImport.update({
     id: '/knowledge-base/',
@@ -148,6 +155,11 @@ const ApiTasksTaskIdRoute = ApiTasksTaskIdRouteImport.update({
   path: '/api/tasks/$taskId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMcpMessageRoute = ApiMcpMessageRouteImport.update({
+  id: '/message',
+  path: '/message',
+  getParentRoute: () => ApiMcpRoute,
+} as any)
 const ApiKnowledgeBaseIdRoute = ApiKnowledgeBaseIdRouteImport.update({
   id: '/api/knowledge-base/$id',
   path: '/api/knowledge-base/$id',
@@ -173,6 +185,7 @@ const ApiKnowledgeBaseIdFilesFileIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteRouteWithChildren
+  '/api/mcp': typeof ApiMcpRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/dashboard/api-keys': typeof DashboardApiKeysRoute
@@ -187,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/knowledge-base/$id': typeof ApiKnowledgeBaseIdRouteWithChildren
+  '/api/mcp/message': typeof ApiMcpMessageRoute
   '/api/tasks/$taskId': typeof ApiTasksTaskIdRoute
   '/dashboard/knowledge-base/$id': typeof DashboardKnowledgeBaseIdRoute
   '/mcp/music/message': typeof McpMusicMessageRoute
@@ -200,6 +214,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/mcp': typeof ApiMcpRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/dashboard/api-keys': typeof DashboardApiKeysRoute
@@ -214,6 +229,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/knowledge-base/$id': typeof ApiKnowledgeBaseIdRouteWithChildren
+  '/api/mcp/message': typeof ApiMcpMessageRoute
   '/api/tasks/$taskId': typeof ApiTasksTaskIdRoute
   '/dashboard/knowledge-base/$id': typeof DashboardKnowledgeBaseIdRoute
   '/mcp/music/message': typeof McpMusicMessageRoute
@@ -229,6 +245,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteRouteWithChildren
+  '/api/mcp': typeof ApiMcpRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/dashboard/api-keys': typeof DashboardApiKeysRoute
@@ -243,6 +260,7 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/knowledge-base/$id': typeof ApiKnowledgeBaseIdRouteWithChildren
+  '/api/mcp/message': typeof ApiMcpMessageRoute
   '/api/tasks/$taskId': typeof ApiTasksTaskIdRoute
   '/dashboard/knowledge-base/$id': typeof DashboardKnowledgeBaseIdRoute
   '/mcp/music/message': typeof McpMusicMessageRoute
@@ -259,6 +277,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/api/mcp'
     | '/auth/login'
     | '/auth/register'
     | '/dashboard/api-keys'
@@ -273,6 +292,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/api/auth/$'
     | '/api/knowledge-base/$id'
+    | '/api/mcp/message'
     | '/api/tasks/$taskId'
     | '/dashboard/knowledge-base/$id'
     | '/mcp/music/message'
@@ -286,6 +306,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/api/mcp'
     | '/auth/login'
     | '/auth/register'
     | '/dashboard/api-keys'
@@ -300,6 +321,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/api/auth/$'
     | '/api/knowledge-base/$id'
+    | '/api/mcp/message'
     | '/api/tasks/$taskId'
     | '/dashboard/knowledge-base/$id'
     | '/mcp/music/message'
@@ -314,6 +336,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/dashboard'
+    | '/api/mcp'
     | '/auth/login'
     | '/auth/register'
     | '/dashboard/api-keys'
@@ -328,6 +351,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/api/auth/$'
     | '/api/knowledge-base/$id'
+    | '/api/mcp/message'
     | '/api/tasks/$taskId'
     | '/dashboard/knowledge-base/$id'
     | '/mcp/music/message'
@@ -343,6 +367,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRouteRoute: typeof DashboardRouteRouteWithChildren
+  ApiMcpRoute: typeof ApiMcpRouteWithChildren
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
   McpMusicRoute: typeof McpMusicRouteWithChildren
@@ -455,6 +480,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/mcp': {
+      id: '/api/mcp'
+      path: '/api/mcp'
+      fullPath: '/api/mcp'
+      preLoaderRoute: typeof ApiMcpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard/knowledge-base/': {
       id: '/dashboard/knowledge-base/'
       path: '/knowledge-base'
@@ -510,6 +542,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/tasks/$taskId'
       preLoaderRoute: typeof ApiTasksTaskIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/mcp/message': {
+      id: '/api/mcp/message'
+      path: '/message'
+      fullPath: '/api/mcp/message'
+      preLoaderRoute: typeof ApiMcpMessageRouteImport
+      parentRoute: typeof ApiMcpRoute
     }
     '/api/knowledge-base/$id': {
       id: '/api/knowledge-base/$id'
@@ -567,6 +606,17 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
 const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
   DashboardRouteRouteChildren,
 )
+
+interface ApiMcpRouteChildren {
+  ApiMcpMessageRoute: typeof ApiMcpMessageRoute
+}
+
+const ApiMcpRouteChildren: ApiMcpRouteChildren = {
+  ApiMcpMessageRoute: ApiMcpMessageRoute,
+}
+
+const ApiMcpRouteWithChildren =
+  ApiMcpRoute._addFileChildren(ApiMcpRouteChildren)
 
 interface McpMusicRouteChildren {
   McpMusicMessageRoute: typeof McpMusicMessageRoute
@@ -642,6 +692,7 @@ const ApiKnowledgeBaseIdRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
+  ApiMcpRoute: ApiMcpRouteWithChildren,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
   McpMusicRoute: McpMusicRouteWithChildren,

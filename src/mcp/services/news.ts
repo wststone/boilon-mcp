@@ -157,14 +157,9 @@ const NEWS_CATEGORIES: Record<string, string> = {
 };
 
 /**
- * Creates and configures the News MCP server powered by Bocha AI
+ * 在 McpServer 上注册新闻相关工具
  */
-export function createNewsServer(_organizationId: string, _userId: string): McpServer {
-	const server = new McpServer({
-		name: "boilon-news",
-		version: "1.0.0",
-	});
-
+export function registerNewsTools(server: McpServer) {
 	const useRealApi = !!BOCHA_API_KEY;
 
 	// Tool: Search news
@@ -393,6 +388,19 @@ export function createNewsServer(_organizationId: string, _userId: string): McpS
 			};
 		},
 	);
+
+}
+
+/**
+ * Creates and configures the News MCP server powered by Bocha AI
+ */
+export function createNewsServer(_organizationId: string, _userId: string): McpServer {
+	const server = new McpServer({
+		name: "boilon-news",
+		version: "1.0.0",
+	});
+
+	registerNewsTools(server);
 
 	return server;
 }

@@ -171,17 +171,9 @@ export async function fetchForecastData(
 // ============================================
 
 /**
- * Creates and configures the Weather MCP server (高德地图)
+ * 在 McpServer 上注册天气相关工具
  */
-export function createWeatherServer(
-	_organizationId: string,
-	_userId: string,
-): McpServer {
-	const server = new McpServer({
-		name: "boilon-weather",
-		version: "1.0.0",
-	});
-
+export function registerWeatherTools(server: McpServer) {
 	// Tool: 获取实时天气
 	server.tool(
 		"get_current_weather",
@@ -215,6 +207,21 @@ export function createWeatherServer(
 			};
 		},
 	);
+}
+
+/**
+ * Creates and configures the Weather MCP server (高德地图)
+ */
+export function createWeatherServer(
+	_organizationId: string,
+	_userId: string,
+): McpServer {
+	const server = new McpServer({
+		name: "boilon-weather",
+		version: "1.0.0",
+	});
+
+	registerWeatherTools(server);
 
 	return server;
 }

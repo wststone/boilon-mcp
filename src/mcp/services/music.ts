@@ -602,14 +602,9 @@ export async function getTopChartsData(
 // ============================================
 
 /**
- * Creates and configures the Music MCP server
+ * 在 McpServer 上注册音乐相关工具
  */
-export function createMusicServer(_organizationId: string, _userId: string): McpServer {
-	const server = new McpServer({
-		name: "boilon-music",
-		version: "1.0.0",
-	});
-
+export function registerMusicTools(server: McpServer) {
 	// Tool: Search tracks
 	server.tool(
 		"search_tracks",
@@ -727,6 +722,18 @@ export function createMusicServer(_organizationId: string, _userId: string): Mcp
 			};
 		},
 	);
+}
+
+/**
+ * Creates and configures the Music MCP server
+ */
+export function createMusicServer(_organizationId: string, _userId: string): McpServer {
+	const server = new McpServer({
+		name: "boilon-music",
+		version: "1.0.0",
+	});
+
+	registerMusicTools(server);
 
 	return server;
 }
