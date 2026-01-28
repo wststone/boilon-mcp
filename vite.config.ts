@@ -17,16 +17,15 @@ const config = defineConfig({
 		devtools(),
 		nitro({
 			preset: "vercel",
-			rolldownConfig: {
-				external: ["pdf-parse", "pdfjs-dist", "@napi-rs/canvas"],
-			},
 		}),
 		// this is the plugin that enables path aliases
 		viteTsConfigPaths({
 			projects: ["./tsconfig.json"],
 		}),
 		tailwindcss(),
-		tanstackStart(),
+		tanstackStart({
+			
+		}),
 		viteReact(),
 	],
 });

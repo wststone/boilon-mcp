@@ -5,7 +5,6 @@ import { batchInsert } from "@/db/utils";
 import { chunkText } from "./chunker";
 import { generateEmbeddings } from "./embedder";
 import { getFileTypeFromName } from "./file-types";
-import { parseFile } from "./parser";
 import { extractKeyFromUrl } from "./storage";
 
 export type TaskStatus = "pending" | "processing" | "completed" | "failed";
@@ -45,6 +44,7 @@ export async function processFileTask(
 
 		// Step 1: 解析文件 (0-30%)
 		await updateTaskStatus(taskId, "processing", 10, "正在解析文件...");
+		const { parseFile } = await import("./parser");
 		const parsed = await parseFile(fileKey, fileType);
 
 		// 创建文档记录
