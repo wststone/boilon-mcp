@@ -159,7 +159,7 @@ const NEWS_CATEGORIES: Record<string, string> = {
 /**
  * Creates and configures the News MCP server powered by Bocha AI
  */
-export function createNewsServer(_organizationId: string): McpServer {
+export function createNewsServer(_organizationId: string, _userId: string): McpServer {
 	const server = new McpServer({
 		name: "boilon-news",
 		version: "1.0.0",

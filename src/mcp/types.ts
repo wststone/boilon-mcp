@@ -39,44 +39,36 @@ export interface RagSearchResult {
 	totalResults: number;
 }
 
-// Weather Service Types
+// Weather Service Types (高德地图 Amap API)
 export interface WeatherData {
-	location: string;
+	province: string;
+	city: string;
+	adcode: string;
+	weather: string;
 	temperature: number;
-	feelsLike: number;
+	winddirection: string;
+	windpower: string;
 	humidity: number;
-	description: string;
-	windSpeed: number;
-	windDirection: string;
-	pressure: number;
-	visibility: number;
-	uvIndex?: number;
-	sunrise?: string;
-	sunset?: string;
+	reporttime: string;
 }
 
 export interface WeatherForecast {
-	location: string;
-	forecasts: Array<{
+	province: string;
+	city: string;
+	adcode: string;
+	reporttime: string;
+	casts: Array<{
 		date: string;
-		high: number;
-		low: number;
-		description: string;
-		precipitation: number;
-		humidity: number;
-		windSpeed: number;
+		week: string;
+		dayweather: string;
+		nightweather: string;
+		daytemp: number;
+		nighttemp: number;
+		daywind: string;
+		nightwind: string;
+		daypower: string;
+		nightpower: string;
 	}>;
-}
-
-export interface WeatherAlert {
-	id: string;
-	event: string;
-	headline: string;
-	description: string;
-	severity: "minor" | "moderate" | "severe" | "extreme";
-	start: string;
-	end: string;
-	areas: string[];
 }
 
 // Music Service Types

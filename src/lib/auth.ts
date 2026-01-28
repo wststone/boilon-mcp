@@ -29,6 +29,7 @@ export const auth = betterAuth({
 		database: {
 			generateId: () => randomUUID(),
 		},
+		cookiePrefix: "boilon_mcp_",
 	},
 	plugins: [
 		organization({
@@ -50,7 +51,7 @@ export const auth = betterAuth({
 		}),
 		tanstackStartCookies(),
 	],
-	trustedOrigins: [import.meta.env.VITE_APP_URL],
+	trustedOrigins: [import.meta.env.VITE_BASE_URL],
 });
 
 export type Session = typeof auth.$Infer.Session;

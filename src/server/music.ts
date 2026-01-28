@@ -1,13 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { sessionAuthMiddleware } from "@/middleware/api-auth";
 import {
-	searchTracksData,
 	getArtistData,
-	getRecommendationsData,
 	getGenresData,
+	getRecommendationsData,
 	getTopChartsData,
+	searchTracksData,
 } from "@/mcp/services/music";
+import { sessionAuthMiddleware } from "@/middleware/api-auth";
 
 // ============================================
 // Schemas

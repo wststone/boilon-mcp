@@ -34,8 +34,8 @@ const navigation = [
 const services = [
 	{ name: "知识库", href: "/dashboard/knowledge-base", icon: Database },
 	{ name: "天气服务", href: "/dashboard/weather", icon: Cloud },
-	{ name: "音乐服务", href: "/dashboard/music", icon: Music },
 	{ name: "新闻服务", href: "/dashboard/news", icon: Newspaper },
+	{ name: "音乐服务", href: "/dashboard/music", icon: Music },
 ];
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {

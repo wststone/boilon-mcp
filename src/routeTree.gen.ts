@@ -16,6 +16,7 @@ import { Route as McpWeatherRouteImport } from './routes/mcp/weather'
 import { Route as McpRagRouteImport } from './routes/mcp/rag'
 import { Route as McpNewsRouteImport } from './routes/mcp/news'
 import { Route as McpMusicRouteImport } from './routes/mcp/music'
+import { Route as DashboardWeatherRouteImport } from './routes/dashboard/weather'
 import { Route as DashboardTeamRouteImport } from './routes/dashboard/team'
 import { Route as DashboardServicesRouteImport } from './routes/dashboard/services'
 import { Route as DashboardNewsRouteImport } from './routes/dashboard/news'
@@ -69,6 +70,11 @@ const McpMusicRoute = McpMusicRouteImport.update({
   id: '/mcp/music',
   path: '/mcp/music',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardWeatherRoute = DashboardWeatherRouteImport.update({
+  id: '/weather',
+  path: '/weather',
+  getParentRoute: () => DashboardRouteRoute,
 } as any)
 const DashboardTeamRoute = DashboardTeamRouteImport.update({
   id: '/team',
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/news': typeof DashboardNewsRoute
   '/dashboard/services': typeof DashboardServicesRoute
   '/dashboard/team': typeof DashboardTeamRoute
+  '/dashboard/weather': typeof DashboardWeatherRoute
   '/mcp/music': typeof McpMusicRouteWithChildren
   '/mcp/news': typeof McpNewsRouteWithChildren
   '/mcp/rag': typeof McpRagRouteWithChildren
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/dashboard/news': typeof DashboardNewsRoute
   '/dashboard/services': typeof DashboardServicesRoute
   '/dashboard/team': typeof DashboardTeamRoute
+  '/dashboard/weather': typeof DashboardWeatherRoute
   '/mcp/music': typeof McpMusicRouteWithChildren
   '/mcp/news': typeof McpNewsRouteWithChildren
   '/mcp/rag': typeof McpRagRouteWithChildren
@@ -227,6 +235,7 @@ export interface FileRoutesById {
   '/dashboard/news': typeof DashboardNewsRoute
   '/dashboard/services': typeof DashboardServicesRoute
   '/dashboard/team': typeof DashboardTeamRoute
+  '/dashboard/weather': typeof DashboardWeatherRoute
   '/mcp/music': typeof McpMusicRouteWithChildren
   '/mcp/news': typeof McpNewsRouteWithChildren
   '/mcp/rag': typeof McpRagRouteWithChildren
@@ -256,6 +265,7 @@ export interface FileRouteTypes {
     | '/dashboard/news'
     | '/dashboard/services'
     | '/dashboard/team'
+    | '/dashboard/weather'
     | '/mcp/music'
     | '/mcp/news'
     | '/mcp/rag'
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/dashboard/news'
     | '/dashboard/services'
     | '/dashboard/team'
+    | '/dashboard/weather'
     | '/mcp/music'
     | '/mcp/news'
     | '/mcp/rag'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/dashboard/news'
     | '/dashboard/services'
     | '/dashboard/team'
+    | '/dashboard/weather'
     | '/mcp/music'
     | '/mcp/news'
     | '/mcp/rag'
@@ -393,6 +405,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/mcp/music'
       preLoaderRoute: typeof McpMusicRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/weather': {
+      id: '/dashboard/weather'
+      path: '/weather'
+      fullPath: '/dashboard/weather'
+      preLoaderRoute: typeof DashboardWeatherRouteImport
+      parentRoute: typeof DashboardRouteRoute
     }
     '/dashboard/team': {
       id: '/dashboard/team'
@@ -528,6 +547,7 @@ interface DashboardRouteRouteChildren {
   DashboardNewsRoute: typeof DashboardNewsRoute
   DashboardServicesRoute: typeof DashboardServicesRoute
   DashboardTeamRoute: typeof DashboardTeamRoute
+  DashboardWeatherRoute: typeof DashboardWeatherRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardKnowledgeBaseIdRoute: typeof DashboardKnowledgeBaseIdRoute
   DashboardKnowledgeBaseIndexRoute: typeof DashboardKnowledgeBaseIndexRoute
@@ -538,6 +558,7 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardNewsRoute: DashboardNewsRoute,
   DashboardServicesRoute: DashboardServicesRoute,
   DashboardTeamRoute: DashboardTeamRoute,
+  DashboardWeatherRoute: DashboardWeatherRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardKnowledgeBaseIdRoute: DashboardKnowledgeBaseIdRoute,
   DashboardKnowledgeBaseIndexRoute: DashboardKnowledgeBaseIndexRoute,

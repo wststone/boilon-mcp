@@ -17,7 +17,7 @@ import type { McpService } from "./types";
  */
 export function createMcpHandler(
 	service: McpService,
-	createServer: (organizationId: string) => McpServer,
+	createServer: (organizationId: string, userId: string) => McpServer,
 ) {
 	const { handleGet, handlePost } = createMcpHttpHandler();
 
@@ -48,7 +48,7 @@ export function createMcpHandler(
 			};
 
 			// Create MCP server for this session
-			const server = createServer(organizationId);
+			const server = createServer(organizationId, authResult.userId!);
 
 			// Track connection
 			await trackUsage(context, "connection", 0);

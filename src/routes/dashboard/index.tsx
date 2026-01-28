@@ -41,8 +41,8 @@ const SERVICE_GRADIENTS: Record<ServiceId, string> = {
 const SERVICE_NAMES: Record<string, string> = {
 	rag: "RAG 知识库",
 	weather: "天气服务",
-	music: "音乐服务",
 	news: "新闻资讯",
+	music: "音乐服务",
 };
 
 function formatRelativeTime(date: Date | null) {

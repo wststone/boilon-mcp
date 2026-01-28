@@ -604,7 +604,7 @@ export async function getTopChartsData(
 /**
  * Creates and configures the Music MCP server
  */
-export function createMusicServer(_organizationId: string): McpServer {
+export function createMusicServer(_organizationId: string, _userId: string): McpServer {
 	const server = new McpServer({
 		name: "boilon-music",
 		version: "1.0.0",
